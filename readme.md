@@ -18,7 +18,7 @@
 
 ### CS 1501: Algorithm Implementation
 
-### CS 1502: Formal Methods in Computer Science
+### CS 1502: Formal Methods in Computer Science [EMPTY]
 
 ### CS 1550: Introduction to Operating Systems
 
