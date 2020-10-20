@@ -1,0 +1,86 @@
+========================================
+CS/COE 1501 Assignment Information Sheet
+----------------------------------------
+
+You must submit an information sheet with every assignment.  Also be sure
+to submit all materials following the procedures described on the
+submission procedures page.
+
+Name:  Gordon Lu
+
+Lecture section:  Tuesday, Thursday: 2:30 - 3:45
+
+Recitation day and time:  Thursday: 11:00 - 11:50
+
+Assignment #:  4
+
+Program due date: Tuesday, November 12, 2019  
+
+Handed in date:  Tuesday, November 12, 2019
+
+Source code file name(s):
+    EdgeWeightedGraph.java, Edge.java, EdgeWeightedDigraph.java,
+    DirectedEdge.java, Graph.java, UnweightedEdge.java, 
+    DijkstraSP.java, DijkstraAllPairsSP.java, Queue.java,
+    IndexMinPQ.java, MinPQ.java, Stack.java, Bag.java, 
+    KruskalMST.java, NetworkAnalysis.java, UF.java,
+    DepthFirstSearch.java
+
+Other file name(s) (if relevant):
+    info_sheet.txt, network_data1.txt, network_data2.txt
+
+Does your program run without error?:
+I utilized a good deal of the given code from the Algorithms textbook, including some that are 
+available from Princeton's Algorithms website. I have slightly modified some of the code so that
+it would be compatible with features from the Project.
+
+NetworkAnalysis.java works perfectly fine. Options 1-5 function as described in the Project Description.
+The only possible errors may be due to UI, or improper error handling.
+
+If not, what is/are the error(s) and which parts of your program run
+correctly?:
+N/A
+
+Additional comments to the grader:
+Possible bugs may exist for Option 4. Extensive testing has been performed in regards
+for testing for Articulation Points in the graph, however there may be additional bugs.
+
+Additionally, in regards I have made the decision to print the respective bandwidths 
+along the shortest latency path, and subsequently print out the overall minimum bandwidth 
+in order to justify that the minimum bandwidth is being printed out.
+- Note, if the User enters the same vertices, NetworkAnalysis will provide the minimum 
+bandwidth as the maximum possible value for an integer, to indicate that the bandwidth to 
+traverse to itself is infinitessimally insignificant. 
+
+In regards for Option II, I made the decision to simply construct a Copper-Only subgraph
+and determine if there are any lone vertices, to indicated copper-connectivity.
+- I merely print whether the graph is Copper-Connected, not the nodes that comprise the
+copper graph, as such details are trivial to implement.
+
+In regards for Option III, I made the decision to utilize KruskalMST, though the type of
+minimum spanning tree utilized is trivial. Whether EagerPrim's, LazyPrim's, for Parent 
+Best-Edge Prim are used, doesn't matter. I decided to simply modify the Edge's toString 
+to print out more decimal places to ensure that the Minimum Latency Spanning Tree is 
+correctly printed out. 
+
+In regards for Option IV, my initial approach was more akin to a brute-force approach. I had
+intially decided to systematically remove every set of two vertices, and store each subgraph 
+into an ArrayList, and check each Subgraph for Articulation Points. The drawback with this 
+approach boils down to an implementation design by Sedgewick and Wayne. THe authors had decided
+to index the vertices on a Graph from 0 to V - 1. The method to remove still kept the nodes to 
+remove, however, the edges were no longer there. Leading to the idea of the functioning approach 
+of reindexing the graph, post-removal. However, rather than remove the nodes from the graph, I
+made the executive decision to simply ignore the graphs, make a deep copy of the graph with V-1
+nodes instead, and systematically reindex the Graph with the ignored vertex in mind, using a 
+HashMap. The trickiest part about this approach was ensuring that the indices were properly 
+alligned. Had it not been for the method that Sedgewick and Wayne had implemented, this 
+problem would have been trivial to implement. However, since their "Bag.java" had neglected
+to include a "remove" method, simply deleting elements will not suffice. I decided to simply 
+display a message stating whether the Network maintains connectivity, rather than printing out
+the pairs of vertices that do destroy connectivity within the Network.
+
+I have also decided to create a user-friendly program. This program will continuously prompt 
+the user to enter a valid input until the user enters one of the valid options. The program 
+will only exit if the user decides to enter NO or Option 5. This program efficiently handles
+cases of the User inputting the wrong input, and displays the appropriate message boxes.
+- Please be way that there may or may not be some unhandled cases in regards to user input.

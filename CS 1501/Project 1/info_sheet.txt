@@ -1,0 +1,75 @@
+========================================
+CS/COE 1501 Assignment Information Sheet
+----------------------------------------
+
+You must submit an information sheet with every assignment.  Also be sure
+to submit all materials following the procedures described on the
+submission procedures page.
+
+Name: Gordon Lu
+
+Lecture section: Tuesday, Thursday: 2:30 - 3:45
+
+Recitation day and time: Thursday: 11:00 - 11:50
+
+Assignment #: 1
+
+Program due date: Wednesday, September 25 2019
+
+Handed in date: Wednesday, September 25 2019
+
+Source code file name(s):
+    DLB.java
+    ac_test.java
+
+
+Other file name(s) (if relevant):
+    approach.txt
+    info_sheet.txt
+
+
+Does your program run without error?:
+To my knowledge, the program works fine, and complies to the Project Description.
+The only possible errors may be due to UI, or improper error handling.
+
+
+If not, what is/are the error(s) and which parts of your program run
+correctly?:
+N/A
+
+
+Additional comments to the grader:
+Possible bugs may exist in how user history is handled and the generation of predictions. 
+However, extensive testing has been performed in regards for testing for predictions, however there may be additional bugs that
+I am unaware of.
+
+In regards of how frequency is enforced, I have utilized a TreeMap with a Mapping between a String that indicates a word that the user
+has previously completed, and an Integer, marking the frequency of a given word. In regards to ties, if two words have the same frequency,
+the word that comes alphabetically first, will be printed first. For example, given two words A and AB with the same frequency, A would be
+printed first, regardless of whether AB was entered recently. 
+
+In regards to error checking, I have made sure that if the user enters a numeric character, "1-5", it will be considered as choosing one
+of the available options. Thus, by extension, if the user enters 1, followed by a $, this will not be tolerated as a word into the 
+dictionary. The same rule follows for input with 6-9 or an input with 0, the input will be rejected, and the user will be prompted to enter input again. 
+
+In addition, the same idea applies if the user enters an option that is not available. For example, if there are only 3 options for a given 
+prefix, if the user enters 4, the input will be rejected, and the user will be prompted to enter an input again. 
+
+There are additional corner cases I have tried to cover. For instance, if the user tries to enter a number between 1 - 5, and no predictions
+have been generated thus far, the program will print a message saying so, and prompt the user to enter input again. Additionally, if the user 
+tries to enter a number between 6 - 9, or 0.
+
+In the project description it was also noted that the output may differ depending on if a word has been completed, or if the user is no 
+longer on the first iteration. I have tried my best to match this, however there are bugs to this, and it does not always match as was 
+put in the example output. However, besides this minute detail, the program works fine. I will still seek to fix this problem, no matter
+how small it may be.
+
+Additionally, I have opted to be more specific with handling user input, with numbers. If the user enters a sequence of characters not in
+the dictionary, and then enters a number instead of another alphabetical character, or the '$' or '!', the program will tell the user that
+they have entered an invalid input, and prompt the user to start enter characters for another word. In other words, if the user doesn't 
+enter valid input, for example, numbers, the program will prompt the user to begin another word!
+
+I have also decided to display additional messages, which differs slightly from the sample output, to make it clearer for the user of invalid
+inputs, warnings, and allow the user to be aware that the program interprets the user to be starting another word. Functionality-wise, the 
+program works fine. In regards to the UI, it may still contain bugs, but I have extensively tested the code, spent countless hours, and hope
+that the code I have created, and thought through is up to par.

@@ -1,0 +1,22 @@
+In regard to handling user history, I have decided to use a TreeMap.
+With this TreeMap, I create a mapping between a certain word, and a number which indicates the number of times that word was entered or added
+to the dictionary by the user. The main reason I have decided to use a TreeMap has to do with Engineering Effort, and runtime. In regards
+to engineering effort, an alternative approach that would have been more troublesome to figure out, would be to encode a frequency field 
+in each Node in the DLB. Specifically, at the end of a word, the Node containing the Terminator Character would have a frequency that would
+be incremented upon each insertion of a word. The predictions method would have to comply with this frequency field, in which I add words into 
+the dictionary based on frequency. Personally, I utilized a TreeMap, as not only does the TreeMap data structure from the Java library already
+contain the put() and get() methods, but creating a mapping, and incrementing a count based on if the word has already been entered or added
+to the dictionary by the user seemed far less troublesome. Runtime wise, I opted for a TreeMap instead of a HashMap as, although a HashMap
+may have an amortized runtime of O(1) for get and put operations, as the HashMap begins to get more filled up, the time to perform such 
+operations begins to degrade, and more collisions begin to arise, therefore leading to runtime more akin to linear runtime. With a TreeMap,
+the runtime is guaranteed to be logarithmic. This is due to the fact that the TreeMap is backed up by a Red-Black tree, meaning that the
+put and get operations, regardless of the input size, will be logarithmic.
+
+Naturally, as words are entered and added to the dictionary, I have to prioritize the words with higher frequencies first, therefore, I handled
+this by using a Comparator, in which I enforced a policy in which entries in the map, with higher frequencies would occur first in the map.
+
+Additionally, I utilized a good deal of data structures such as LinkedHashMaps, and HashMaps in order to filter out elements in the Map whose
+key did not begin with the current prefix being built up. In addition, once all of the filtering is complete, and the map is correctly
+ordered by higher frequency words occuring first in the map, I merged both the user history and the dictionary ArrayLists, ensuring to first
+store the newly filtered, frequency ordered Map's key set into an array, and then using a LinkedHashSet to ensure no duplicates occur in the 
+merged ArrayList, then merging both ArrayLists, and moving it into a larger ArrayList.

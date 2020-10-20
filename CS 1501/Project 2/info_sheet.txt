@@ -1,0 +1,73 @@
+========================================
+CS/COE 1501 Assignment Information Sheet
+----------------------------------------
+
+You must submit an information sheet with every assignment.  Also be sure
+to submit all materials following the procedures described on the
+submission procedures page.
+
+Name: Gordon Lu
+
+Lecture section: Tuesday, Thursday: 2:30 - 3:45
+
+Recitation day and time: Thursday: 11:00 - 11:50
+
+Assignment #: 2
+
+Program due date:  Sunday, October 13, 2019 
+
+Handed in date:  Sunday, October 13, 2019 
+
+Source code file name(s):
+    MyLZW.java
+    LZW.java
+    StdIn.java
+    StdOut.java
+    BinaryStdIn.java
+    BinaryStdOut.java
+    HybridTST.java
+    LZW_HybridString.java
+    HybridQueue.java
+    SeparateChainingHashST.java
+    RedBlackBST.java
+
+
+Other file name(s) (if relevant):
+    approach.txt
+    info_sheet.txt
+
+
+Does your program run without error?:
+To my knowledge, the program works fine, and complies to the Project Description.
+The only possible errors may be due to UI, or improper error handling.
+
+
+If not, what is/are the error(s) and which parts of your program run
+correctly?:
+N/A
+
+
+Additional comments to the grader:
+Regarding the implementation of LZW_HybridString.java, it is simply the Source Code for the Java 6 String class.
+I have simply decided to utilize the Java 6 String class in order to speed up the performance of String operations
+in LZW. In versions of Java beyond Java 6, the String class utilizes the substring method in a way such that in the 
+application of LZW, its perfomance is favorable. Substring in Java 6 utilizes pointers to the same char array in the 
+heap, avoiding allocating more memory, and operating on the same object within the heap. Additionally, the Java 6 
+String operates under the assumption that the string of the user wishes to extract a substring is sparse. For the 
+purposes of LZW, as well as the TST, which expect sparse data (since English prose is sparse), will yield runtime
+akin to constant runtime. The current Java String class operates under the assumption that Users prefer memory
+over runtime. Therefore, it operates under the assumption that the String that the user wishes to abstract data 
+from is rather dense. For the purposes of LZW, where the File contents can span from KBs to MBs, consistent calls
+to substring will yield runtime akin to quadratic runtime. Therefore, for the purposes of LZW, the Java 6 String 
+will replace any calls to substring within the Compression portion of LZW. As for the Expansion, this change is 
+unneccesary, as there is no dependency towards the substring method, perfect hashing can be used to preallocate
+a fixed-size array to hold its contents, or the array can be dynamically resized in order to allocate memory as needed. 
+To complement the Java 6 string, both the Queue and TST are modified in order to supplement it. Both named HybridTST and 
+HybridQueue in order to highlight the usage of Java 6 String to improve the performance of String operations. Overall, 
+the combination of LZW_HybridString, HybridTST, and HybridQueue will result in runtime akin to constant time. 
+This will result in files such as "all.tar" to take around 30 seconds to compress, rather than 15 - 20 minutes 
+(without the Java 6 String).
+
+In regards to the implementation of MessageBox and SampleBox, they merely serve to display user-friendly messages
+in the case that the user does not enter the expected input. 
+- Additionally, ANSI constants are utilized to aesthetically print out the box.

@@ -1,0 +1,184 @@
+=======================Apartment.java=========================
+The reasoning around this class is to serve as a way to represent an Apartment to store into the the corresponding 
+PQs, and appropriately print out the contents of the apartment, as well as fetch and set particular instance fields in 
+other classes for this project...
+======================IndexedMinMaxPQ.java=============================
+This class is the marriage between both the IndexMinPQ.java and IndexMaxPQ.java classes provided by the textbook.
+Rather than utilizing the given Generic for Keys, I decided to directly pass in the Apartment objects. By doing so,
+I can replace calls to the compareTo method by directly comparing the corresponding rent or corresponding square footage.
+
+In order to distinguish between Min and Max PQs, in a separate class, named ApartmentPQ, every time I initialize a Priority Queue,
+I complement it with two Sentinel Keys, "MIN" will indicate that the user wants to create a MinPQ, "MAX" will indicate that the 
+user wants to create a MaxPQ, and "REG" will indicate that the user does not want to query by city, while "City" indicates that the 
+user does want to query by city.
+
+In regards to modifications to this file, I simply added switch case statements to decide which functionality to utilize based on the 
+Sentinel Key, therefore, any operations, will remain similar to the original IndexMinPQ and IndexMaxPQ files.
+
+Specifically, with insertions, removals, and updates, the operations will take ~O(log(n)) time.
+
+=====================ApartmentPQ.java===========================
+This class serves to perform a multitude of operations based on what the user has specified in the driver class, AptTracker.java.
+
+In order to ensure that the operations maintain O(log(n)) runtime, I made use of the fact that on average, the user's input will usually
+consist of sparse strings. Meaning that using a data structure such as an R-way trie will waste a lot of memory. Therefore, in regards to the 
+update and removal functions, I utilized a DLB in order to fetch an associated index based on the search content that the user enters. 
+
+Notably, with tries, especially with sparse data, the search and insertion function take runtime proportional to the length of the key that is passed in.
+
+Incidentally, for the purposes of the project, these operations will take time ~ O(Rw), where R is the alphabet size, and w is the length of the passed in string.
+
+The memory overhead on the other hand will be not so light. Since, we can operate under the assumption that the user prioritizes performance over memory, we can
+use a data structure such as a trie, which will be ~O(nRw), since I have initialized 4 DLBs, 2 PQs, and each DLB will store a PQ, the memory overhead is heavy.
+
+I will now highlight the justifications for utilizing a DLB.
+====================================================================
+Add and Fetch:
+====================================================================
+In the add() and fetch() functions, we have to ensure that we maintain fast, efficient operations. With a DLB, and the inherent nature of English prose, we know
+that the data we expect is rather sparse. In other words, by the time we dive fairly deep into a string, we can predict with a fair amount of accuracy what the 
+next letter would be and the possible words that could follow from a certain path of the DLB. Tries are notorious for their fast string operations, and with DLBs, 
+the linked list overhead is minimized, as we expect branches to be rather short. Therefore, with insertion, I have opted to use a DLB,in which I have created 
+4 DLBs. 
+
+1) I have 2 DLBs correspond to a mapping of a String to an Integer. What these DLBs serve to do is given a query, the DLB will be able to tell at which index a certain
+apartment is stored at in the priority queue. One DLB corresponds to fetching apartments based on Square Footage, while the other one corresponds to fetching
+apartments based on Price.
+
+2) Additionally, I have 2 more DLBs mapping Strings to Priority Queues. What these DLBs serve to do is given a particular city, return the corresponding priority
+queue, which is populated with apartments with that city name. This way, upon each insertion of a new apartment, the heap property will be enforced within the 
+overall priority queue, and the priority queue based on cities.
+
+3) By taking use of indexable priority queues, with the indirection tables as DLBs now set in place, many of the operations will be fast. In retrieving the 
+maximum square footage apartment, we can simply take the overall square footage PQ, and return the root value, the same applies for the minimum price PQ as well.
+
+4) Additionally, to retrieve the minimum price apartment based on city, this required traversing through the DLB to find the end of the requested city, returning
+the priority queue, and then returning the root. A similar process occurs with retrieving the maximum square footage apartment based on city.
+
+5) With the DLB and priority queue approach, we will expect runtime akin to logarithmic runtime. I will highlight this in the Overall Runtime portion.
+====================================================================
+Remove:
+====================================================================
+The justifications for the removal time follows a similar reasoning as add(). We essentially want fast, efficient operations. Using a DLB, we can traverse to a given 
+value in around O(wR) time. Revolving around the assumption that since English prose is rather sparse, the data expected is also sparse. Meaning that, we can predict 
+with a fair amount of accuracy what the next letter would be and the possible words that could follow from a certain path of the DLB. Tries are notorious for their 
+fast string operations, and with DLBs, the linked list overhead is minimized, as we expect branches to be rather short. Therefore, with removal, I have opted to use 
+a DLB,in which I have used the same 4 DLBs from add(). 
+
+1) In order for removal to run smoothly, first, we must be able to have a fast retrieval operation. I have 2 DLBs correspond to a mapping of a String to an Integer. 
+What these DLBs serve to do is given a query, the DLB will be able to tell at which index a certain apartment is stored at in the priority queue. One DLB corresponds 
+to fetching apartments based on Square Footage, while the other one corresponds to fetching apartments based on Price.
+- For removal, I use the query string, and search these DLBs in order to retrieve the correct index within the PQs to delete from.
+
+2) Additionally, I have 2 more DLBs mapping Strings to Priority Queues. What these DLBs serve to do is given a particular city, return the corresponding priority
+queue, which is populated with apartments with that city name. This way, upon each deletion of an apartment, the heap property will be enforced within the 
+overall priority queue, and the priority queue based on cities.
+- For removal, I use the passed-in query string, and search these DLBs and retrieve the corresponding PQ, and once I have the said PQ, I use the index retrieved
+from the other <String, Integer> DLB to access the correct index, and delete said apartment.
+
+3) By taking use of indexable priority queues, with the indirection tables as DLBs now set in place, many of the operations will be fast. In deleting any apartment, we can 
+simply use the index from the <String,Integer> DLB, and use that index to navigate to the corresponding apartment in the PQ, and delete it.
+The same argument applies for the minimum price PQ as well.
+
+4) Additionally, to delete any apartment based on city, this required traversing through the DLB to find the end of the requested city, returning
+the priority queue, and then using the index from the <String, Integer> DLB to delete the correct apartment. A similar process occurs with deleting any 
+square footage apartment based on city.
+
+5) With the DLB and priority queue approach, we will expect runtime akin to logarithmic runtime. I will highlight this in the Overall Runtime portion.
+====================================================================
+Update:
+====================================================================
+The justifications for the removal time follows a similar reasoning as remove(). We essentially want fast, efficient operations. Using a DLB, we can traverse to a given 
+value in around O(wR) time. Revolving around the assumption that since English prose is rather sparse, the data expected is also sparse. Meaning that, we can predict 
+with a fair amount of accuracy what the next letter would be and the possible words that could follow from a certain path of the DLB. Tries are notorious for their 
+fast string operations, and with DLBs, the linked list overhead is minimized, as we expect branches to be rather short. Therefore, with update, I have opted to use 
+a DLB,in which I have used 2 of the same DLBs from add(). 
+
+1) In order for update to run smoothly, first, we must be able to have a fast retrieval operation. I have 2 DLBs correspond to a mapping of a String to an Integer. 
+What these DLBs serve to do is given a query, the DLB will be able to tell at which index a certain apartment is stored at in the priority queue. One DLB corresponds 
+to fetching apartments based on Square Footage, while the other one corresponds to fetching apartments based on Price.
+- For update, I use the query string, and search these DLBs in order to retrieve the correct index within the PQs to update.
+
+2) Additionally, I have 2 more DLBs mapping Strings to Priority Queues. What these DLBs serve to do is given a particular city, return the corresponding priority
+queue, which is populated with apartments with that city name. This way, upon each insertion of a new apartment, the heap property will be enforced within the 
+overall priority queue, and the priority queue based on cities.
+- For update, I use the passed-in query string, and search these DLBs and retrieve the corresponding PQ, and once I have the said PQ, I use the index retrieved
+from the other <String, Integer> DLB to access the correct index, and update said apartment, and corresponding sinks and swims will be performed to enforce the 
+Heap Property.
+
+3) By taking use of indexable priority queues, with the indirection tables as DLBs now set in place, many of the operations will be fast. In updating any apartment, 
+we can simply use the index from the <String,Integer> DLB, and use that index to navigate to the corresponding apartment in the PQ, and update the corresponding
+apartment. The same argument applies for the minimum price PQ as well.
+
+4) Additionally, to update an apartment based on city, this required traversing through the DLB to find the end of the requested city, returning
+the priority queue, and then using the index from the <String, Integer> DLB to update the correct apartment. A similar process occurs with updating any 
+square footage apartment based on city.
+
+5) One thing to note would be that we do not need to update the indices within our DLB. Instead, in the Indexable Priority Queues, the inverse priority queue, will
+remap values by swapping them around, that way when an apartment is updated, the index retrieved from the DLB will still correspond to the same apartment.
+
+5) With the DLB and priority queue approach, we will expect runtime akin to logarithmic runtime. I will highlight this in the Overall Runtime portion.
+====================================================================
+
+Overall Runtime:
+====================================================================
+Insert: 
+====================================================================
+O(wR*log(n)) + O(wR*log(n)) + O(log(n)) + O(log(n)) + O(wR) + O(wR) =
+2 * O(wR*log(n)) + 2 * O(log(n)) + 2 * O(wR) ~ 2*O(log(n)) + 2*O(log(n)) = 4*O(log(n)) ~ O(log(n))
+- Potentially in the DLB, we will need to traverse to the correct location, then readjust its corresponding PQ for the Heap Property. There will be two instances
+of this, since we need to insert into the two DLBs mapping Strings to DLBs.
+- The additional logarithmic term comes from the insertion of an apartment into the PQ, and the result of adjusting for the Heap Property. There will be two 
+instances of this, since we need to insert into the PQ based on Price, and the PQ based on Square Footage.
+- The wR terms comes from inserting into the DLBs that map Strings to Integers. However, with tilde approximations, this is a lower-order term and will be dropped.
+====================================================================
+Fetch:
+====================================================================
+O(1) for fetch overall minimum/maximum, O(wR) to fetch minimum/maximum by city
+1) Fetching the overall minimum price apartment & overall maximum square footage apartment:
+- These operations are the same as retrieving the highest priority item in a Priority Queue, meaning, retrieving the root: O(1)
+2) Fetching the minimum price apartment based on city & maximum square footage apartment based on city:
+- These operations are dependent more on the amount of time it will take to traverse to the correct node in the DLB. Assuming we're dealing with sparse data,
+this operation will take: O(wR), and to retrieve the highest priority item, this will be a constant-time operation, leaving us with: O(wR * 1) = O(wR)
+====================================================================
+Removal:
+====================================================================
+O(wR*log(n)) + O(wR*log(n)) + O(log(n)) + O(log(n)) + O(wR) + O(wR) =
+2 * O(wR*log(n)) + 2 * O(log(n)) + 2 * O(wR) ~ 2*O(log(n)) + 2*O(log(n)) = 4*O(log(n)) ~ O(log(n))
+- Potentially in the DLB, we will need to traverse to the correct location, then once the correct PQ is retrieved, we need to delete the corresponding apartment based
+on the index from the DLB mapping <String, Integer>, then readjusting its corresponding PQ for the Heap Property. There will be two instances
+of this, since we need to remove an apartment from the PQs stored in the DLBs mapping from <String, PQ>.
+- The additional logarithmic term comes from the deletion of an apartment into the PQ, and the result of adjusting for the Heap Property. There will be two 
+instances of this, since we need to remove an apartment from the PQ based on Price, and the PQ based on Square Footage.
+- The wR terms comes from traversing to the correct node in the DLBs that map Strings to Integers. However, with tilde approximations, this is a lower-order term 
+and will be dropped.
+====================================================================
+Update:
+====================================================================
+O(wR*log(n)) + O(wR*log(n)) + O(log(n)) + O(log(n)) + O(wR) + O(wR) =
+2 * O(wR*log(n)) + 2 * O(log(n)) + 2 * O(wR) ~ 2*O(log(n)) + 2*O(log(n)) = 4*O(log(n)) ~ O(log(n))
+- Potentially in the DLB, we will need to traverse to the correct location, then once the correct PQ is retrieved, we need to update the corresponding apartment based
+on the index from the DLB mapping <String, Integer>, and the new price/square footage then readjusting its corresponding PQ for the Heap Property. There will be two instances
+of this, since we need to update an apartment from the PQs stored in the DLBs mapping from <String, PQ>.
+- The additional logarithmic term comes from the update of an apartment into the PQ, and the result of adjusting for the Heap Property. There will be two 
+instances of this, since we need to update an apartment from the PQ based on Price, and the PQ based on Square Footage.
+- The wR terms comes from traversing to the correct node in the DLBs that map Strings to Integers. However, with tilde approximations, this is a lower-order term 
+and will be dropped.
+====================================================================
+Overall Runtime:
+====================================================================
+O(log(n)) + O(log(n)) + O(log(n)) + O(1) + O(1) + O(wR) + O(wR) 
+~ O(log(n)) + O(log(n)) + O(log(n)) = 3 * O(log(n)) ~ O(log(n))
+1) The first three logarithmic terms come from the operations: Add, Update, and Remove.
+2) The two constant terms following come from the operations: Retrieve lowest rent, Retrieve highest square footage
+3) The remaining constant terms come from DLB traversals, specifically, the operations: Retrieve lowest rent by city, Retrieve highest square footage by city
+====================================================================
+Overall Memory:
+====================================================================
+The overall memory is heavy.
+4 * O(wRn) - Comes from the initialization of the 4 DLBs.
+2 * 3 * O(n) - Comes from the initialization of the each of the PQs, since there are 3 arrays correspnding with each PQ.
+n * 3 * O(n) - Comes from the possibility of inserting a unique city into the DLBs mapping <String, Integer>, potentially n PQs, each with 3 arrays.
+
+Overall, this boils down to: 
+4 * O(wRn) + (2*3) * O(n) + (3 * n) * O(n) = 4 * wRn + 6n + (3*n) * n =  4 * wRn + 6n + 3n^2, which boils down to around allocating memory for around n^2 items.

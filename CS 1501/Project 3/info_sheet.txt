@@ -1,0 +1,57 @@
+========================================
+CS/COE 1501 Assignment Information Sheet
+----------------------------------------
+
+You must submit an information sheet with every assignment.  Also be sure
+to submit all materials following the procedures described on the
+submission procedures page.
+
+Name: Gordon Lu
+
+Lecture section:  Tuesday, Thursday: 2:30 - 3:45
+
+Recitation day and time:  Thursday: 11:00 - 11:50
+
+Assignment #: 3 
+
+Program due date:  Tuesday, October 29th, 2019
+
+Handed in date:  Tuesday, October 29th, 2019
+
+Source code file name(s):
+    IndexedMinMaxPQ.java
+    ApartmentPQ.java
+    Apartment.java
+    AptPQ.java
+    DLB.java
+
+Other file name(s) (if relevant):
+    info_sheet.txt
+    documentation.txt
+
+Does your program run without error?:
+Works to my knowledge. There still may be possible bugs during 
+testing, I hope that my code is up to par, as I have many hours
+testing this code.
+
+To my knowledge, the program works fine, and complies to the Project Description.
+The only possible errors may be due to UI, or improper error handling.
+
+If not, what is/are the error(s) and which parts of your program run
+correctly?:
+N/A
+
+Additional comments to the grader:
+I have opted to be more specific with handling user input, the program will tell the user that
+they have entered an invalid input, and prompt the user to enter again. 
+
+I have also decided to display additional messages, which differs slightly from the sample output, to make it clearer for the user of invalid
+inputs, warnings, and allow the user to be aware that the program interprets the user to be starting another word. Functionality-wise, the 
+program works fine. In regards to the UI, it may still contain bugs, but I have extensively tested the code, spent countless hours, and hope
+that the code I have created, and thought through is up to par.
+ 
+I have also decided to create a user-friendly program. This program will continuously prompt 
+the user to enter a valid input until the user enters one of the valid options. The program 
+will only exit if the user decides to enter NO. This program efficiently handles
+cases of the User inputting the wrong input, and displays the appropriate message boxes.
+- Please be way that there may or may not be some unhandled cases in regards to user input.

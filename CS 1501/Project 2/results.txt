@@ -1,0 +1,42 @@
+File Name:                  Original Size:                  LZW:               MyLZW - n:                MyLZW - r:                 MyLZW - m:              bzip2:
+all.tar                       3031040 B                  1846854 B             1792781 B                 1178221 B                  1846854 B              869001 B     
+Compression Ratio:                                          1.64                  1.69                     2.57                       1.67                  3.49
+
+assig2.doc                      87040 B                    74574 B               40040 B                   40040 B                    40040 B               24067 B
+Compression Ratio:                                          1.17                  2.17                      2.17                       2.17                  3.62
+
+bmps.tar                      1105920 B                   925079 B               80913 B                   80913 B                    80913 B               59411 B
+Compression Ratio:                                          1.20                  13.67                    13.67                      13.67                 18.61    
+
+code2.txt                       57701 B                    24138 B               20516 B                   20516 B                    20516 B               12153 B     
+Compression Ratio:                                          2.39                   2.81                     2.81                       2.81                  4.75   
+
+code.txt                        72351 B                    30980 B               24545 B                   24545 B                    24545 B               13395 B            
+Compression Ratio:                                          2.34                   2.95                     2.95                       2.95                  5.40
+
+edit.exe                       236328 B                   250742 B               156409 B                 152227 B                   159409 B              115058 B        
+Compression Ratio:                                          0.94                   1.51                     1.55                       1.51                  2.05   
+
+frosty.jpg                     126748 B                   177453 B               163789 B                 171170 B                   163789 B              127010 B      
+Compression Ratio:                                          0.71                   0.77                     0.74                       0.77                  ~1.0
+
+gone_fishing.bmp                17336 B                     9278 B                 8963 B                   8963 B                     8963 B                8373 B
+Compression Ratio:                                          1.87                   1.93                     1.93                       1.93                  2.07   
+
+large.txt                     1220703 B                   605184 B               501777 B                 527506 B                   501777 B              371865 B
+Compression Ratio:                                          2.02                   2.43                     2.31                       2.43                  3.28                                                                         
+
+Lego-big.gif                    93371 B                   128973 B               122493 B                 122493 B                   122493 B               93633 B   
+Compression Ratio:                                          0.72                   0.76                     0.76                       0.76                  ~1.0                        
+
+medium.txt                      25407 B                    13197 B                12531 B                  12531 B                    12531 B                9349 B   
+Compression Ratio:                                          1.93                   2.03                     2.03                       2.03                  2.72
+
+texts.tar                     1382400 B                  1012179 B               597847 B                 590475 B                   597847 B              411652 B    
+Compression Ratio:                                          1.37                   2.31                     2.34                       2.31                  3.36 
+
+wacky.bmp                      921654 B                     4302 B                 3951 B                   2951 B                     3951 B                1225 B     
+Compression Ratio:                                          214.24                 233.27                   233.27                     233.27                752.37
+
+winnt256.bmp                   157044 B                   159050 B                62931 B                  62931 B                    62931 B               48721 B
+Compression Ratio:                                          0.99                   2.50                     2.50                       2.50                  3.22  
