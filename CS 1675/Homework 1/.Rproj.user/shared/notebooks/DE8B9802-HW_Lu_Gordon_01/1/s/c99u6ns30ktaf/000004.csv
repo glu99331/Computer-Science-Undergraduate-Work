@@ -1,0 +1,2 @@
+"0","my_iris <- iris %>% mutate(sepal_length_bin = "
+"0","        cut(Sepal.Length, include.lowest = TRUE, breaks = hist_breaks))"

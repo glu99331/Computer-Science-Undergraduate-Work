@@ -1,0 +1,2 @@
+"0","mtcars_b %>% "
+"0","  select(c(""mpg"", ""cyl"", ""disp"", ""car_name""))"

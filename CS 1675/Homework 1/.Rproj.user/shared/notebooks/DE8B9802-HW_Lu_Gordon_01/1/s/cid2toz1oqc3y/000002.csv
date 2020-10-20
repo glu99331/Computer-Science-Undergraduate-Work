@@ -1,0 +1,2 @@
+"0","iris %>% ggplot(mapping = aes(x=Sepal.Length)) + "
+"0","  geom_histogram(bins = 6, color = ""navyblue"", fill = ""gold"")"

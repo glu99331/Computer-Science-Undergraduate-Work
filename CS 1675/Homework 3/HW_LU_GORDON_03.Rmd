@@ -1,0 +1,1112 @@
+---
+title: 'CS 1675 Homework: 03'
+subtitle: 'Assigned: February 3, 2020; Due: February 17, 2020'
+author: "Gordon Lu"
+date: "Submission time: February 17, 2020 at 8:55PM"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Collaborators
+
+Include the names of your collaborators here.  
+
+## Overview
+
+This homework assignment has two primary goals. First, you will program the Laplace Approximation for the Gaussian likelihood with an unknown mean and unknown noise. Second, you will be introduced to resampling. You will use 5-fold cross-validation to identify that a more complex model is overfitting to the training set, and is thus fooled by noise.  
+
+Completing this assignment requires filling in missing pieces of information from existing code chunks, programming complete code chunks from scratch, typing discussions about results, and working with LaTeX style math formulas. A template .Rmd file is available to use as a starting point for this homework assignment. The template is available on CourseWeb.  
+
+**IMPORTANT:** Please pay attention to the `eval` flag within the code chunk options. Code chunks with `eval=FALSE` will **not** be evaluated (executed) when you Knit the document. You **must** change the `eval` flag to be `eval=TRUE`. This was done so that you can Knit (and thus render) the document as you work on the assignment, without worrying about errors crashing the code in questions you have not started. Code chunks which require you to enter all of the required code do not set the `eval` flag. Thus, those specific code chunks use the default option of `eval=TRUE`.  
+
+## Load packages
+
+This assignment uses the `dplyr` and `ggplot2` packages, which are loaded in the code chunk below. The resampling questions will make use of the `modelr` package, which we will load later in this report. The assignment also uses the `tibble` package to create tibbles, and the `readr` package to load CSV files. All of the listed packages are part of the `tidyverse` and so if you downloaded and installed the `tidyverse` already, you will have all of these packages. This assignment will use the `MASS` package to generate random samples from a MVN distribution. The `MASS` package should be installed with base R, and is listed with the System Library set of packages.  
+
+```{r, load_pck1, warning=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
+\pagebreak
+
+## Problem 1
+
+You are tasked by a manufacturing company to study the variability of a component that they produce. This particular component has an important figure of merit that is measured on every single manufactured piece. The engineering teams feel that the measurement is quite noisy. Your goal will be to learn the unknown mean and unknown noise of this figure of merit based on the noisy observations.  
+
+The data set that you will work with is loaded in the code chunk below and assigned to the `df_01` object. As the `glimpse()` function shows, `df_01` consists of two variables, `obs_id` and `x`. There are 405 rows or observations. `obs_id` is the "observation index" and `x` is the measured value.  
+
+```{r, load_df_01_data, eval=TRUE}
+df_01 <- readr::read_csv("https://raw.githubusercontent.com/jyurko/CS_1675_Spring_2020/master/hw_data/hw03/df_01.csv", col_names = TRUE)
+
+df_01 %>% glimpse()
+```
+
+\pagebreak
+
+### 1a)
+
+Let's start out by visualizing and summarizing the available measurements.  
+
+#### PROBLEM
+
+**Create a "run chart" of the measurments by piping the `df_01` data set into `ggplot()`. Map the `x` aesthetic to `obs_id` and the `y` aesthetic to `x`. Use `geom_line()` and `geom_point()` geometric objects to display the measured value with respect to the observation index.**  
+
+**Visually, do any values appear to stand out from the "bulk" of the measurements?**  
+
+
+
+#### SOLUTION
+
+```{r, solution_1a, fig.align = 'center', eval = TRUE}
+df_01 %>% ggplot(mapping = aes(x = obs_id, y = x)) + 
+  geom_line() + geom_point()
+```
+
+
+### DISCUSSION:
+Yes, there appears to be two apparent outliers. One that is an outlier on the upper bound, exceeding 10. The other one is an outlier on the lower bound, exceeding -10.
+
+### 1b)
+
+#### PROBLEM
+
+**Create a histogram with `geom_histogram()`, by mapping the `x` aesthetic to the variable `x`. Set the number of bins to be 25.**  
+
+**Based on the histogram and the run chart, where are most of the measurement values concentrated? What shape does the distribution look like?**  
+
+#### SOLUTION
+
+
+```{r, solution_1b, fig.align = 'center', eval = TRUE}
+df_01 %>% ggplot(mapping = aes(x = x)) + 
+  geom_histogram(bins = 25)
+```
+### DISCUSSION:
+The distribution looks approximately symmetric and normal, with the exception of the outliers on both ends of the distribution. Most of the measurement values tend to be concentrated around 0.
+
+\pagebreak
+
+### 1c)
+
+#### PROBLEM
+
+**Use the `summary()` function to summarize the `df_01` data set. Then calculate the 5th and 95th quantile estimates of the variable `x`. Lastly, calculate the standard deviation on the `x` variable. Are the summary statistics in line with your conclusions based on the run chart and histogram?**  
+
+*HINT*: The quantiles can be estimated via the `quantile()` function. Type `?quantile` into the `R` Console for help with the arguments to the quantile function.  
+
+#### SOLUTION
+
+```{r, solution_01c, eval=TRUE}
+### apply the summary function
+df_01 %>%  summary()
+### calculate the quantile estimates
+quantile(df_01$x, probs = seq(0,1,0.05), na.rm = TRUE)
+### calculate the empirical standard deviation of x
+std_dev <- sd(df_01$x)
+
+```
+
+### DISCUSSION: The 5th percentile value of around -7.8 looks to be around the correct value based on the run chart and histogram. So too does the 95th percentile value of around 9.2.  
+
+\pagebreak
+
+### 1d)
+
+The summary statistics in Problem 1c) were estimated by using all of the `r nrow(df_01)` observations. The manufacturing company produces several other components which could also be measured. It will take a considerable effort to measure the same number of components as are available in the current data set. Therefore, it is important to understand the behavior of the sample average with respect to the number of observations.  
+
+In `dplyr` we can calculate "rolling" sample averages with the `cummean()` function. This function "accumulates" all of the observations up to a current index and calculates the sample average. We can call the `cummean()` function directly within a `mutate()` call, which allows considerable flexibility, since we do not have use for-loops to create this operation. Let's visualize how the "rolling sample average" changes over time.  
+
+#### PROBLEM
+
+**Pipe the `df_01` data set into a `mutate()` call. Create a new column (variable) in the data set, `rolling_avg`, which is equal to the rolling average of `x`. Pipe the result into `ggplot()` and map the `x` aesthetic to `obs_id` and the `y` aesthetic to `rolling_avg`. Display the rolling average with respect to the observation index with the `geom_line()` geometric object.**  
+
+**Which portion of the rolling average appears the most variable? Does the rolling average steady-out at all?**  
+
+#### SOLUTION
+
+```{r, solution_1d, fig.align = 'center',  out.height = '40%', eval = TRUE}
+df_01 %>% mutate(rolling_avg = cummean(x)) %>%
+  ggplot(mapping = aes(x = obs_id, y = rolling_avg)) + 
+  geom_line()
+```
+
+### DISCUSSION:
+The rolling averages seem to be the most variable around the beginning, the observations from approximately 0 to 50 seem to fluctuate greatly, whereas beyond 100 observations, it seems to narrow out, and the rolling average looks to steady out.
+
+### 1e)
+
+In this problem, you will focus on two specific sample sizes. You will calculate the sample average after 5 observations and 45 observations.  
+
+#### PROBLEM
+
+**What does the sample average equal to after 5 observations? What does the sample average equal to after 45 observations?**  
+
+```{r}
+cummean(df_01$x)[5]
+cummean(df_01$x)[45]
+```
+
+
+#### SOLUTION
+After 5 observations, the sample average is equal to approximately 0.25.
+After 45 observations, the sample average is equal to approximately 1.24.
+
+\pagebreak
+
+## Problem 2
+
+With a simple Exploratory Data Analysis (EDA) completed, it's time to begin modeling. You are interested in learning the unknown mean of the figure of merit and the unknown noise in the measurement process. Because the manufacturing company is interested in understanding the behavior of the estimates "over time", it will be critical to assess uncertainty in the unknowns at low sample sizes. Therefore, you use a Bayesian approach to estimating the unknown mean, $\mu$, and unknown noise, $\sigma$.  
+
+The figure of merit, `x`, is a continuous variable, and after discussions with the engineering teams, it seems that a Guassian likelihood is a reasonable assumption to make. You will assume that each observation is conditionally independent of the others given $\mu$ and $\sigma$. You will also assume that the two unknowns are a-priori independent. The joint posterior distribution on $\mu$ and $\sigma$ conditioned on the observations $\mathbf{x}$ is therefore proportional to:  
+
+$$ 
+p\left(\mu,\sigma \mid \mathbf{x} \right) \propto \prod_{n=1}^{N} \left( \mathrm{normal}\left( x_n \mid \mu,\sigma \right) \right) \times p\left(\mu\right) \times p\left( \sigma \right)
+$$
+
+### 2a)
+
+You will be applying the Laplace Approximation to learn the unknown $\mu$ and $\sigma$. In lecture, and in homework 02, it was discussed that it is a good idea to first transform $\sigma$ to a new variable $\varphi$, before executing the Laplace Approximation.  
+
+#### PROBLEM
+
+**Why is it a good idea to transform $\sigma$ before performing the Laplace Approximation?**  
+
+
+#### SOLUTION
+
+We want to transform the bounded variable $\sigma$ to a new unbounded variable, and we want to fufill a constraint on bounds based on the given distribution, therefore tranforming kills two birds with one stone.  
+
+### 2b)
+
+Consider a general transformation, or link function, applied to the unknown $\sigma$:  
+
+$$ 
+\varphi = g\left (\sigma \right)
+$$
+
+The inverse link function which allows "back-transforming" from $\varphi$ to $\sigma$ is:  
+
+$$ 
+\sigma = g^{-1} \left( \varphi \right)
+$$
+
+#### PROBLEM
+
+**Write out the joint-posterior between the unknown $\mu$ and unknown transformed parameter $\varphi$ by accounting for the probability change-of-variables formula. You must keep the prior on $\mu$ and $\sigma$ general for now, and make use of the general inverse link function notation. Denote the likelihood as a Gaussian likelihood, as shown in the Problem 2 description.**  
+
+#### SOLUTION
+
+$$
+p(\mu, \varphi | \mathbf{x}) = \prod_{n=1}^{N} [normal(x_n | \mu, g^{-1}({\varphi})] \times p(\mu) \times p(g^{-1}(\varphi)) \times |\frac{d}{d\varphi}(g^{-1}(\varphi))|
+$$
+
+
+### 2c)
+
+After discussions with the engineering teams at the manufacturing company, it was decided that a normal prior on $\mu$ and an Exponential prior on $\sigma$ are appropriate. The normal prior is specified in terms of a prior mean, $\mu_0$, and prior standard deviation, $\tau_0$. The Exponential prior is specified in terms of a rate parameter, $\lambda$. The prior distributions are written out for you below.  
+
+$$ 
+p\left(\mu\right) = \mathrm{normal}\left( \mu \mid \mu_0,\tau_0 \right)
+$$
+
+$$ 
+p\left(\sigma\right) = \mathrm{Exp}\left( \sigma \mid \lambda \right)
+$$
+
+Because you will be applying the Laplace approximation, you decide to use a log-transformation as the link function:  
+
+$$ 
+\varphi = \log \left( \sigma \right)
+$$
+The engineering team feels fairly confident that the measurement process is rather noisy. They feel the noise is obscuring a mean figure of merit value that is actually negative. For that reason, it is decided to set the hyperparameters to be $\mu_0 = -1/2$, $\tau_0 = 1$, and $\lambda = 1/3$. You are first interested in how their prior beliefs change due to the first 5 observations.  
+
+You will define a function to calculate the un-normalized log-posterior for the unknown $\mu$ and $\varphi$. You will follow the format discussed in lecture, and so the hyperparameters and measurements will be supplied within a list. The list of the required information is defined for you in the code chunk below. The hyperparameter values are specified, as well as the first 5 observations are stored in the variable `xobs`. The list is assigned to the object `info_inform_N05` to denote the prior on the unknown mean is informative and the first 5 observations are used.  
+
+```{r, setup_info_list_N05, eval=TRUE}
+info_inform_N05 <- list(
+  xobs = df_01$x[1:5],
+  mu_0 = -0.5,
+  tau_0 = 1,
+  sigma_rate = 1/3
+)
+info_inform_N05
+```
+
+#### PROBLEM
+
+**You must complete the code chunk below in order to define the `my_logpost()` function. This function is in terms of the unknown mean $\mu$ and unknown transformed parameter $\varphi$. Therefore you MUST account for the change-of-variables transformation. The first argument to `my_logpost()` is a vector, `unknowns`, which contains all of the unknown parameters to the model. The second argument `my_info`, is the list of required information. The unknown mean and unknown transformed parameter are extracted from `unknowns`, and are assigned to the `lik_mu` and `lik_varphi` variables, respectively. You must complete the rest of the code chunk. Comments provide hints for what calculations you must perform.**  
+
+**You ARE allowed to use built-in `R` functions to evaluate densities.**  
+
+*HINT*: the `info_inform_N05` list of information provides to you the names of the hyperparameter and observation variables to use in the `my_logpost()` function. This way all students will use the same nomenclature for evaluating the log-posterior.  
+
+*HINT*: The second code chunk below provides three test cases for you. If you correctly coded the `my_logpost()` function, the first test case which sets `unknowns = c(0, 0)` will yield a value of `-76.75337`. The second test case which sets `unknowns = c(-1, -1)` yields a value of `-545.4938`. The third test case which sets `unknowns = c(1, 2)` yields a value of `-19.49936`. If you do not get three values very close to those printed here, there is a typo in your function.  
+
+#### SOLUTION
+
+```{r, solution_02c, eval=TRUE}
+my_logpost <- function(unknowns, my_info)
+{
+  # extrack the unknowns
+  lik_mu <- unknowns[1]
+  lik_varphi <- unknowns[2]
+  
+  # backtransform to sigma
+  lik_sigma <- exp(lik_varphi)
+  
+  # calculate the log-likelihood
+  
+  # Similarly could have done:
+  
+  # log_lik <- sum(-1/2 * log(2*pi) - 1/2 * log(lik_sigma^2) - (my_info$xobs - lik_mu)^2/(2*(lik_sigma^2)))
+  log_lik <- sum(dnorm(x = my_info$xobs,
+                       mean = lik_mu,
+                       sd = lik_sigma,
+                       log = TRUE))
+  
+  
+ log_prior_mu <- dnorm(x = lik_mu,
+                       mean = my_info$mu_0,
+                       sd = my_info$tau_0,
+                       log = TRUE)
+   
+  
+  # calculate the log-prior on each parameter
+  # log_prior_mu <- -1/2 * log(2*pi) - 1/2 * log(my_info$tau_0^2) - (lik_mu - my_info$mu_0)^2/(2*(my_info$tau_0^2))
+  
+  log_prior_sigma <- log(my_info$sigma_rate) - (lik_sigma * my_info$sigma_rate)
+  
+  # calculate the log-derivative adjustment due to the 
+  # change-of-variables transformation
+  
+  log_deriv_adjust <- lik_varphi
+  
+    
+  # sum all together
+  return(log_lik + log_prior_mu + log_prior_sigma + log_deriv_adjust)
+}
+```
+
+Check test cases.  
+
+```{r, solution_02c_test, eval=TRUE}
+my_logpost(c(0, 0), info_inform_N05)
+
+my_logpost(c(-1, -1), info_inform_N05)
+
+my_logpost(c(1, 2), info_inform_N05)
+```
+
+### 2d)
+
+Because this problem consists of just two unknowns, we can graphically explore the true log-posterior surface. We did this in lecture by studying in both the original $\left(\mu, \sigma\right)$ space, as well as the transformed and unbounded $\left(\mu, \varphi\right)$ space. However, in this homework assignment, you will continue to focus on the transformed parameters $\mu$ and $\varphi$.  
+
+In order to visualize the log-posterior surface, you must define a grid of parameter values that will be applied to the `my_logpost()` function. A simple way to create a full-factorial grid of combinations is with the `expand.grid()` function. The basic syntax of the `expand.grid()` function is shown in the code chunk below for two variables, `x1` and `x2`. The `x1` variable is a vector of just two values `c(1, 2)`, and the variable `x2` is a vector of 3 values `1:3`. As shown in the code chunk output printed to the screen the `expand.grid()` function produces all 6 combinations of these two variables. The variables are stored as columns, while their combinations correspond to a row within the generated object. The `expand.grid()` function takes care of the "book keeping" for us, to allow varying `x2` for all values of `x1`.  
+
+```{r, expandgrid_demo, eval=TRUE}
+expand.grid(x1 = c(1, 2),
+            x2 = 1:3,
+            KEEP.OUT.ATTRS = FALSE,
+            stringsAsFactors = FALSE) %>% 
+  as.data.frame() %>% tbl_df()
+```
+
+You will now make use of the `expand.grid()` function to create a grid of candidate combinations between $\mu$ and $\varphi$.  
+
+#### PROBLEM
+
+**Complete the code chunk below. The variables `mu_lwr` and `mu_upr` correspond to the lower and upper bounds in the grid for the unknown $\mu$ parameter. Specifiy the lower bound to be the 0.01 quantile (1st percentile) based on the prior on $\mu$. Specify the upper bound to the 0.99 quantile (99th percentile) based on the prior on $\mu$. The variables `varphi_lwr` and `varphi_upr` are the lower and upper bounds in the grid for the unknown $\varphi$ parameter. Specify the lower bound to be the log of the 0.01 quantile (1st percentile) based on the prior on $\sigma$. Specificy the upper bound to be the log of the 0.99 quantile(99th percentile) based on the prior on $\sigma$.**  
+**Create the grid of candidate values, `param_grid`, by setting the input vectors to the `expand.grid()` function to be 201 evenly spaced points between the defined lower bound and upper bounds on the paraemters.**  
+
+*HINT*: remember that probability density functions in `R` each have their own specific quantile functions...  
+
+#### SOLUTION
+
+```{r, solution_02d, eval=TRUE}
+### bounds on mu
+mu_lwr <- qnorm(0.01, mean = info_inform_N05$mu_0, sd = info_inform_N05$tau_0)
+mu_upr <- qnorm(0.99, mean = info_inform_N05$mu_0, sd = info_inform_N05$tau_0)
+
+### bounds on varphi
+varphi_lwr <- log(qexp(0.01, rate = info_inform_N05$sigma_rate))
+varphi_upr <- log(qexp(0.99, rate = info_inform_N05$sigma_rate))
+
+### create the grid 
+param_grid <- expand.grid(mu = seq(mu_lwr, mu_upr, length.out = 201),
+                          varphi = seq(varphi_lwr, varphi_upr, length.out = 201),
+                          KEEP.OUT.ATTRS = FALSE,
+                          stringsAsFactors = FALSE) %>% 
+  as.data.frame() %>% tbl_df()
+```
+
+### 2e)
+
+The `my_logpost()` function accepts a vector as the first input argument, `unknowns`. Thus, you cannot simply pass in the separate columns of the `param_grid` data set. To overcome this, you will define a "wrapper" function, which manages the call to the log-posterior function. The wrapper, `eval_logpost()` is started for you in the code chunk below. The first argument to `eval_logpost()` is a value for the unknown mean, the second argument is a value to the unknown $\varphi$ parameter, the third argument is the desired log-posterior function, and the fourth argument is the list of required information.  
+
+This problem tests that you understand how to call a function, and how the input arguments to the log-posterior function are structured. You will need to understand that structure in order to perform the Laplace Approximation later on.  
+
+#### PROBLEM
+
+**Complete the code chunk below such that the user supplied `my_func` function has the `mu_val` and `varphi_val` variables combined into a vector with the correct order.**  
+
+**Once you complete the `eval_logpost()` function, the second code chunk below uses the `purrr` package to calculate the log-posterior over all combinations in the grid. The result is stored in a vector `log_post_inform_N05`.**  
+
+#### SOLUTION
+
+```{r, solution_02e, eval=TRUE}
+eval_logpost <- function(mu_val, varphi_val, my_func, my_info)
+{
+  my_func( c(mu_val, varphi_val), my_info)
+}
+```
+
+```{r, solution_02e_b, eval=TRUE}
+log_post_inform_N05 <- purrr::map2_dbl(param_grid$mu,
+                                       param_grid$varphi,
+                                       eval_logpost,
+                                       my_func = my_logpost,
+                                       my_info = info_inform_N05)
+```
+
+### 2f)
+
+The code chunk below defines the `viz_logpost_surface()` function for you. It generates the log-posterior surface contour plots in the style presented in lecture. You are required to interpret the log-posterior surface and describe the most probable values and uncertainty in the parameters.  
+
+```{r, make_logpost_surface_viz, eval=TRUE}
+viz_logpost_surface <- function(log_post_result, grid_values)
+{
+  gg <- grid_values %>% 
+    mutate(log_dens = log_post_result) %>% 
+    mutate(log_dens_2 = log_dens - max(log_dens)) %>% 
+    ggplot(mapping = aes(x = mu, y = varphi)) +
+    geom_raster(mapping = aes(fill = log_dens_2)) +
+    stat_contour(mapping = aes(z = log_dens_2),
+                 breaks = log(c(0.01/100, 0.01, 0.1, 0.5, 0.9)),
+                 color = "black") +
+    scale_fill_viridis_c(guide = FALSE, option = "viridis",
+                         limits = log(c(0.01/100, 1.0))) +
+    labs(x = expression(mu), y = expression(varphi)) +
+    theme_bw()
+  
+  print(gg)
+}
+```
+
+#### PROBLEM
+
+**Call the `viz_logpost_surface()` function by setting the `log_post_result` argument equal to the `log_post_inform_N05` vector, and the `grid_values` argument equal to the `param_grid` object.**  
+
+**Which values of the transformed unbounded $\varphi$ parameter are completely ruled out, even after 5 observations? Which values for the unknown mean, $\mu$, appear to be the most probable? Is the posterior uncertainty on $\mu$ small compared to the prior uncertainty?**  
+
+#### SOLUTION
+
+```{r, solution_02f, fig.align = 'center', eval=TRUE}
+viz_logpost_surface(log_post_inform_N05, param_grid)
+```
+
+### DISCUSSION:
+For the tranformed unbounded $\varphi$ paremeter, values that are negative are ruled out. For the unknown mean $\mu$, the most probable values seem to be centered around -0.5.
+No, the posterior uncertainty on $\mu$ does is not small relative to the prior uncertainty.
+
+### 2g)
+
+The log-posterior visualization in Problem 2f) is based just on the first 5 observations. You must now repeat the analysis with 45 and all 405 observations. The code chunk below defines the two lists of required information, assuming the informative prior on $\mu$. You will use these two lists instead of the `info_inform_N05` to recreate the log-posterior surface contour visualization.  
+
+```{r, set_higher_sample_info_list, eval=TRUE}
+info_inform_N45 <- list(
+  xobs = df_01$x[1:45],
+  mu_0 = -0.5,
+  tau_0 = 1,
+  sigma_rate = 1/3
+)
+
+info_inform_N405 <- list(
+  xobs = df_01$x,
+  mu_0 = -0.5,
+  tau_0 = 1,
+  sigma_rate = 1/3
+)
+```
+
+#### PROBLEM
+
+**Complete the two code chunks below. The first code chunk requires you to complete the `purrr::map2_dbl()` call, which evaluates the log-posterior for all combinations of the parameters. By careful that you use the correct list of required information. The `log_post_inform_N45` object corresponds to the 45 sample case, while the `log_post_info_N405` object corresponds to using all of the samples.**  
+
+**The second and third code chunks require that you call the `viz_logpost_surface()` function for the posterior based on 45 samples, and the posterior based on all 405 samples, respectively.**  
+
+**How does the log-posterior surface change as the sample size increases? Does the most probable values of the two parameters change as the sample size increases? Does the uncertainty in the parameters decrease?**  
+
+#### SOLUTION
+
+```{r, solution_02g_a, eval=TRUE}
+### check the arguments from param_grid!!!
+log_post_inform_N45 <- purrr::map2_dbl(param_grid$mu,
+                                       param_grid$varphi,
+                                       eval_logpost,
+                                       my_func = my_logpost,
+                                       my_info = info_inform_N45)
+
+### check the arguments from param_grid!!!
+log_post_inform_N405 <- purrr::map2_dbl(param_grid$mu,
+                                        param_grid$varphi,
+                                        eval_logpost,
+                                        my_func = my_logpost,
+                                        my_info = info_inform_N405)
+```
+
+```{r, solution_02g_b, fig.align = 'center', eval=TRUE}
+viz_logpost_surface(log_post_inform_N45, param_grid)
+```
+
+```{r, solution_02g_c, fig.align = 'center', eval=TRUE}
+viz_logpost_surface(log_post_inform_N405, param_grid)
+```
+
+### DISCUSSION:
+As the sample size increases, the log-posterior surface begins to narrow in, and look somewhat normal looking around the posterior mode.
+The most probable values of $\varphi$ and $\mu$ do not seem to change, if not, it changes by a very small amount. 
+The values that are ruled out have increased.
+The uncertainty has also decreased, which can be seen by the amount of values that have been ruled out, the size of the contour is significantly smaller, reflecting this increase in certainty.
+
+## Problem 3
+
+It's now time to work with the Laplace Approximation. The first step is to find the posterior mode, or the maximum a posteriori (MAP) estimate. An iterative optimization scheme is required to do so for most of the posteriors you will use in this course. As described in lecture, you will use the `optim()` function to perform the optimization.  
+
+### 3a)
+
+The code chunk below defines two different initial guesses for the unknowns. You will try out both initial guesses and compare the optimization results. You will focus on the 5 observation case.  
+
+```{r, set_init_guesses, eval=TRUE}
+init_guess_01 <- c(-1, -1)
+init_guess_02 <- c(2, 2)
+```
+
+#### PROBLEM
+
+**Complete the two code chunks below. The first code chunk finds the posterior mode (the MAP) based on the first initial guess `init_guess_01` and the second code chunk uses the second initial guess `init_guess_02`. You must fill in the arguments to the `optim()` call in order to approximate the posterior based on 5 observations.**  
+
+**To receive full credit you must: specify the initial guesses correctly, specify the function to be optimized correctly, specify the gradient evaluation correctly, correctly pass in the list of required information for 5 samples, tell `optim()` to return the hessian matrix, and ensure that `optim()` is trying to maximize the log-posterior rather than attempting to minimize it.**  
+
+#### SOLUTION
+
+```{r, solution_03_a, eval=TRUE}
+map_res_01 <- optim(init_guess_01,
+                    my_logpost,
+                    gr = NULL,
+                    info_inform_N05,
+                    method = "BFGS",
+                    hessian = TRUE,
+                    control = list(fnscale = -1, maxit = 1001))
+```
+
+```{r, solution_03_b, eval=TRUE}
+map_res_02 <- optim(init_guess_02,
+                    my_logpost,
+                    gr = NULL,
+                    info_inform_N05,
+                    method = "BFGS",
+                    hessian = TRUE,
+                    control = list(fnscale = -1, maxit = 1001))
+```
+
+### 3b)
+
+You tried two different starting guesses...will you get the same optimized results?  
+
+#### PROBLEM
+
+**Compare the two optimization results from Problem 3a). Are the identified optimal parameter values the same? Are the Hessian matrices the same? Was anything different?**  
+
+**What about the log-posterior surface gave you a hint about how the two results would compare?**  
+
+#### SOLUTION
+
+Yes, the identified optimal parameter values and the Hessian matrices are the same. No, there is nothing different besides the starting point.
+The log-posterior surfaces only have a single peak, therefore, the results should be expected to be the same.
+
+
+### 3c)
+
+Finding the mode is the first step in the Laplace Approximation. The second step uses the negative inverse of the Hessian matrix as the approximate posterior covariance matrix. You will use a function, `my_laplace()`, to perform the complete Laplace Approximation. This way, this one function is all that's needed in order to perform all steps of the Laplace Approximation.  
+
+#### PROBLEM
+
+**Complete the code chunk below. The `my_laplace()` function is adapted from the `laplace()` function from the `LearnBayes` package. Fill in the missing pieces to double check that you understand which portions of the optimization result correspond to the mode and which are used to approximate the posterior covariance matrix.**  
+
+#### SOLUTION
+
+```{r, solution_03c, eval=TRUE}
+my_laplace <- function(start_guess, logpost_func, ...)
+{
+  # code adapted from the `LearnBayes`` function `laplace()`
+  fit <- optim(start_guess,
+               logpost_func,
+               gr = NULL,
+               ...,
+               method = "BFGS",
+               hessian = TRUE,
+               control = list(fnscale = -1, maxit = 1001))
+  
+  mode <- fit$par
+  h <- -solve(fit$hessian)
+  p <- length(mode)
+  # we will discuss what int means in a few weeks...
+  int <- p/2 * log(2 * pi) + 0.5 * log(det(h)) + logpost_func(mode, ...)
+  list(mode = mode,
+       var_matrix = h,
+       log_evidence = int,
+       converge = ifelse(fit$convergence == 0,
+                         "YES", 
+                         "NO"),
+       iter_counts = fit$counts[1])
+}
+```
+
+### 3d)
+
+You now have all of the pieces in place to perform the Laplace Approximation. Execute the Laplace Approximation for the 5 sample, 45 sample, and 405 sample cases.  
+
+#### PROBLEM
+
+**Call the `my_laplace()` function in order to perform the Laplace Approximation based on the 3 sets of observations you studied with the log-posterior surface visualizations. Check that each converged.**  
+
+#### SOLUTION
+
+```{r, solution_03d, eval=TRUE}
+laplace_res_inform_N05 <- my_laplace(init_guess_01, my_logpost, info_inform_N05)
+
+laplace_res_inform_N45 <- my_laplace(init_guess_01, my_logpost, info_inform_N45)
+
+laplace_res_inform_N405 <- my_laplace(init_guess_01, my_logpost, info_inform_N405)
+
+laplace_res_inform_N05$converge
+
+laplace_res_inform_N45$converge
+
+laplace_res_inform_N405$converge
+
+### check if they eached converged
+```
+
+### 3e)
+
+The MVN approximate posteriors that you solved for in Problem 3d) are in the $\left( \mu, \varphi \right)$ space. In order to help the manufacturing company, you will need to back-transform from $\varphi$ to $\sigma$, while accounting for any potential posterior correlation with $\mu$. A simple way to do so is through random sampling. The MVN approximate posteriors are a known type of distribution, a Multi-Variate Normal (MVN). You are therefore able to call a random number generator which uses the specified mean vector and specified covariance matrix to generate random samples from a MVN. Back-transforming from $\varphi$ to $\sigma$ is accomplished by simply using the inverse link function.  
+
+The code chunk below defines the `generate_post_samples()` function for you. The user provides the Laplace Approximation result as the first argument, and the number of samples to make as the second argument. The `MASS::mvrnorm()` function is used to generate the posterior samples. Almost all pieces of the function are provided to you, except you **must** complete the back-transformation from $\varphi$ to $\sigma$ by using the correct inverse link function.  
+
+#### PROBLEM
+
+**Complete the code chunk below by using the correct inverse link function to back-transform from $\varphi$ to $\sigma$.**  
+
+#### SOLUTION
+
+```{r, solution_03e, eval = TRUE}
+generate_post_samples <- function(mvn_info, N)
+{
+  MASS::mvrnorm(n = N, 
+                mu = mvn_info$mode, 
+                Sigma = mvn_info$var_matrix) %>% 
+    as.data.frame() %>% tbl_df() %>% 
+    purrr::set_names(c("mu", "varphi")) %>% 
+    mutate(sigma = exp(varphi)) ### backtransform to sigma!!!
+}
+```
+
+### 3f)
+
+1e4 posterior samples based on the 3 different observation sample sizes are generated for you in the code chunk below.  
+
+```{r, create_post_samples_all, eval = TRUE}
+set.seed(200121)
+post_samples_inform_N05 <- generate_post_samples(laplace_res_inform_N05, N = 1e4)
+post_samples_inform_N45 <- generate_post_samples(laplace_res_inform_N45, N = 1e4)
+post_samples_inform_N405 <- generate_post_samples(laplace_res_inform_N405, N = 1e4)
+```
+
+You will summarize the posterior samples and visualize the posterior marginal histograms.  
+
+#### PROBLEM
+
+**Use the `summary()` function to summarize the posterior samples based on each of the three observation sample sizes. What are the posterior mean values on $\mu$ and $\sigma$ as the number of observations increase? Visualize the posterior histograms on $\mu$ and $\sigma$ based on each of the three observation sample sizes.**  
+
+#### SOLUTION
+
+```{r, fig.align = 'center'}
+
+post_samples_inform_N05 %>% summary()
+
+post_samples_inform_N45 %>% summary()
+
+post_samples_inform_N405 %>% summary()
+
+post_samples_inform_N05 %>% ggplot(mapping = aes(x = sigma)) + geom_histogram()
+post_samples_inform_N05 %>% ggplot(mapping = aes(x = mu)) + geom_histogram()
+
+
+post_samples_inform_N45 %>% ggplot(mapping = aes(x = sigma)) + geom_histogram()
+post_samples_inform_N45 %>% ggplot(mapping = aes(x = mu)) + geom_histogram()
+
+post_samples_inform_N405 %>% ggplot(mapping = aes(x = sigma)) + geom_histogram()
+post_samples_inform_N405 %>% ggplot(mapping = aes(x = mu)) + geom_histogram()
+
+
+
+```
+
+
+### DISCUSSION:
+Numerically, the posterior mean value and the standard deviation at 5 samples are: $\mu$: -0.3697 and $\sigma$: 5.175.
+The posterior mean value and the standard deviation at 45 samples are: $\mu$: 0.6407 and $\sigma$: 4.927.
+The posterior mean value and the standard deviation at 45 samples are: $\mu$: 0.7044 and $\sigma$: 5.154.
+
+The results of the above plots follow from the Central Limit Theorem. As the number of observations increases, the amount of noise or the standard deviation by definition.
+As a result, the distributions begin to approximate a normal distribution.
+
+### 3g)
+
+Another benefit of working with posterior samples rather than the posterior density is that it is relatively straight forward to answer potentially complex questions. At the start of this project, the engineering teams felt that mean value of the figure of merit was negative. You can now tell them the probability of that occuring. Additionally, the engineering teams felt that the measurement process was rather noisy. You can provide uncertainty intervals on the unknown $\sigma$. Depending on the amount of uncertainty about the noise, that might help them decide if company should invest in more precise measurement equipment.  
+
+#### PROBLEM
+
+**What is the posterior probability that $\mu$ is positive for each of the three observation sample sizes? What are the 0.05 and 0.95 quantiles on $\sigma$ for each of the three observation sample sizes?**  
+
+```{r}
+#Calculate the Posterior Probability 
+post_prob_mu_N05 <- 1 - pnorm(0, mean = mean(post_samples_inform_N05$mu), sd = sd(post_samples_inform_N05$sigma))
+
+post_prob_mu_N45 <- 1 - pnorm(0, mean = mean(post_samples_inform_N45$mu), sd = sd(post_samples_inform_N45$sigma))
+
+post_prob_mu_N405 <- 1 - pnorm(0, mean = mean(post_samples_inform_N405$mu), sd = sd(post_samples_inform_N405$sigma))
+
+prob_mu_vector <- c(post_prob_mu_N05, post_prob_mu_N45, post_prob_mu_N405)
+
+prob_mu_vector
+```
+
+```{r}
+post_quantile_lwr_sigma_N05 <- qnorm(0.05, mean = mean(post_samples_inform_N05$mu), sd = sd(post_samples_inform_N05$sigma))
+
+post_quantile_uppr_sigma_N05 <- qnorm(0.95, mean = mean(post_samples_inform_N05$mu), sd = sd(post_samples_inform_N05$sigma))
+
+post_quantile_lwr_sigma_N45 <- qnorm(0.05, mean = mean(post_samples_inform_N45$mu), sd = sd(post_samples_inform_N45$sigma))
+
+post_quantile_uppr_sigma_N45 <- qnorm(0.95, mean = mean(post_samples_inform_N45$mu), sd = sd(post_samples_inform_N45$sigma))
+
+post_quantile_lwr_sigma_N405 <- qnorm(0.05, mean = mean(post_samples_inform_N405$mu), sd = sd(post_samples_inform_N405$sigma))
+
+post_quantile_uppr_sigma_N405 <- qnorm(0.95, mean = mean(post_samples_inform_N405$mu), sd = sd(post_samples_inform_N405$sigma))
+
+quantile_vector <- c(post_quantile_lwr_sigma_N05, post_quantile_uppr_sigma_N05, post_quantile_lwr_sigma_N45, 
+                     post_quantile_uppr_sigma_N45, post_quantile_lwr_sigma_N405, post_quantile_uppr_sigma_N405)
+
+quantile_vector
+
+```
+
+
+
+#### SOLUTION
+The posterior probability that $\mu$ is positive for 5 observations is: 0.3995590.
+The posterior probability that $\mu$ is positive for 45 observations is: 0.8904088.
+The posterior probability that $\mu$ is positive for 405 observations is: 0.9999444.
+
+The 0.05 quantile on $\sigma$ for 5 observations is: -2.7593428. The 0.95 quantile on $\sigma$ for 5 observations is: 2.0199059.
+The 0.05 quantile on $\sigma$ for 45 observations is: -0.2170140. The 0.95 quantile on $\sigma$ for 45 observations is: 1.4985096.
+The 0.05 quantile on $\sigma$ for 405 observations is 0.4045902. The 0.95 quantile on $\sigma$ for 405 observations is: 1.0041649.
+
+
+## Problem 4
+
+In this problem you get first hand experience working with the `lm()` function in `R`. You will make use of that function to fit simple to complex models on low and high noise data sets. You will then use cross-validation to  assess if the models are overfitting to a training set.  
+
+Two data sets are in for you in the code chunks below. Both consist of an input `x` and a continuous response `y`. The two data sets are synthetic. Both come from the same underlying true functional form. The true functional form is not given to you. You are given random observations generated around that true functional form. The `df_02_low` data set corresponds to a random observations with low noise, while the `df_02_high` data set corresponds to random observations with high noise.  
+
+```{r, read_in_df_02_datasets, eval=TRUE}
+df_02_low <- readr::read_csv("https://raw.githubusercontent.com/jyurko/CS_1675_Spring_2020/master/hw_data/hw03/df_02_low.csv", 
+                             col_names = TRUE)
+
+df_02_high <- readr::read_csv("https://raw.githubusercontent.com/jyurko/CS_1675_Spring_2020/master/hw_data/hw03/df_02_high.csv",
+                              col_names = TRUE)
+```
+
+Show a glimpse of each data set below.  
+
+```{r, show_df_02_glimpse, eval=TRUE}
+df_02_low %>% glimpse()
+
+df_02_high %>% glimpse()
+```
+
+### 4a)
+
+Create scatter plots in `ggplot2` between the response `y` and the input `x`.  
+
+
+#### PROBLEM
+
+**Use `ggplot()` with `geom_point()` to visualize scatter plots between the response and the input for both the low and high noise data sets. Since you know that `df_02_low` corresponds to low noise, can you make a guess about the true functional form that generated the data?**  
+
+#### SOLUTION
+
+```{r, fig.align='center'}
+
+df_02_low %>% ggplot(mapping = aes(x = x)) +
+  geom_point(mapping = aes(y = y),
+             size = 1)
+
+df_02_high %>% ggplot(mapping = aes(x = x)) +
+  geom_point(mapping = aes(y = y),
+             size = 1)
+
+```
+
+
+
+### DISCUSSION:
+Based on the form of the relatively low-diffuse data set, I can tell that the original function takes on the some sort of parabolic relationship. Most likely a even-power polynomial, most likely a quadratic one.
+
+### 4b)
+
+The `lm()` function in `R` is quite flexible. You can use a formula interface to specify models of various functional relationships between the response and the inputs. To get practice working with the formula interface you will create three models for the low noise case and three models for the high noise case. You will specificy a linear relationship between the response and the input, a quadratic relationship, and an 8th order polynomial.  
+
+There are many ways the polynomials can be created. For this assignment though, you will use the `I()` function to specify the polynomial terms. This approach will seem quite tedious, but the point is to get practice working with the formula interface. We will worry about efficiency later in the semester. The formula interface for stating the response, `y`, has a cubic relationship with the input `x` is just:  
+
+`y ~ x + I(x^2) + I(x^3)`  
+
+The `~` operator reads as "is a function of". Thus, the term to the left of `~` is viewed as a response, and the expression to the right of `~` is considered to be the features or predictors. With the formula specified the only other required argument to `lm()` is the data object. Thus, when using the formula interface, the syntax to creating a model with `lm()` is:  
+
+`<model object> <- lm(<output> ~ <input expression>, data = <data object>)`  
+
+#### PROBLEM
+
+**Create a linear relationship, quadratic relationship, and 8th order polynomial model for the low and high noise cases. Use the formula interface to define the relationships.**  
+
+#### SOLUTION
+
+The low noise case models are given below.  
+
+```{r, solution_04b_a, eval=TRUE}
+mod_low_linear <- lm(y ~ x, data = df_02_low)
+
+mod_low_quad <- lm(y ~ x + I(x^2), data = df_02_low)
+
+mod_low_8th <- lm(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) +
+                    I(x^6) + I(x^7) + I(x^8), data = df_02_low)
+
+
+```
+
+The high noise case models are given in the code chunk below.  
+
+```{r, solution_04b_b, eval=TRUE}
+mod_high_linear <- lm(y ~ x, data = df_02_high)
+
+mod_high_quad <- lm(y ~ x + I(x^2), data = df_02_high)
+
+mod_high_8th <- lm(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + 
+                     I(x^6) + I(x^7) + I(x^8), data = df_02_high) 
+```
+
+### 4c)
+
+There are many different approaches to inspect the results of `lm()`. A straightforward way is to use the `summary()` function to display a print out of each model's fit to the screen. Here, you will use `summary()` to read the R-squared performance metric associated with each model.  
+
+#### PROBLEM
+
+**Use the `summary()` function to print out the summary of each model's fit. Which of the three relationships had the highest R-squared for the low noise case? Which of the three relationships had the highest R-squared for the high noise case?**  
+
+#### SOLUTION
+
+```{r}
+mod_low_linear %>% summary()
+
+mod_low_quad %>% summary()
+
+mod_low_8th %>% summary()
+
+```
+
+
+```{r}
+mod_high_linear %>% summary()
+
+mod_high_quad %>% summary()
+
+mod_high_8th %>% summary()
+```
+
+
+### DISCUSSION: 
+Among the low noise case, the 8th order polynomial relationship has the highest r-squared value.
+Among the high noise case, the 8th order polynomial relationship has the highest r-squared value.
+
+### 4d)
+
+As mentioned previously, there are many methods in `R` to extract the performance of a `lm()` model. The `modelr` package, which is within the `tidyverse`, includes some useful functions for calculating the Root Mean Squared Error (RMSE) and R-squared values. The syntax for calculating the RMSE with the `modelr::rmse()` function is:  
+
+`modelr::rmse(<model object>, <data set>)`  
+
+The data supplied to `modelr::rmse()` can be a new data set, as long as the response is included in the data set. `modelr::rmse()` manages the book keeping for making predictions, comparing those predictions to the observed responses, calculating the errors, and summarizing. We will be discussing all of these steps later in the semester. For now, it's practical to know a function to quickly compute an important quantity such as RMSE.  
+
+We will use the `modelr` package for the remainder of Problem 4, so the code chunk below loads it into the current session.  
+
+```{r, load_modelr_pck}
+library(modelr)
+```
+
+#### PROBLEM
+
+**Use the `modelr::rmse()` function to calculate the RMSE for each of the models on their corresponding training sets. Thus, calculate the RMSE of the low noise case models with respect to the low noise data set. Calculate the RMSE of the high noise case models with respect to the high noise data set.**  
+
+#### SOLUTION
+
+The low noise case RMSEs are calculated below.  
+
+```{r, solution_04d_a, eval=TRUE}
+modelr::rmse(mod_low_linear, df_02_low)
+modelr::rmse(mod_low_quad, df_02_low)
+modelr::rmse(mod_low_8th, df_02_low)
+```
+
+The high noise case RMSEs are calculated below.  
+
+```{r, solution_04d_b, eval=TRUE}
+modelr::rmse(mod_high_linear, df_02_high)
+modelr::rmse(mod_high_quad, df_02_high)
+modelr::rmse(mod_high_8th, df_02_high)
+```
+
+### 4e)
+
+The previous performance metrics were calculated based on the training set alone. We know that only considering the training set performance metrics such as RMSE and R-squared will prefer overfit models, which simply chase the noise in the training data. To assess if a model is overfit, we can breakup a data set into multiple training and test splits via cross-validation. For the remainder of this problem, you will work with 5-fold cross-validation to get practice working with multiple data splits.  
+
+You will not have create the data splits on your own. In fact, the data splits are created for you in the code chunk below, for the low noise case. The `modelr::crossv_kfold()` function has two main input arguments, `data` and `k`. The `data` argument is the data set we wish to performance k-fold cross-validation on. The `k` argument is the number of folds to create. There is a third argument, `id`, which allows the user to name the fold "ID" labels, which by default are named `".id"`. As previously stated, the code chunk below creates the 5-fold data splits for the low noise case for you.  
+
+```{r, create_5fold_object}
+set.seed(23413)
+cv_info_k05_low <- modelr::crossv_kfold(df_02_low, k = 5)
+```
+
+The contents of the `cv_info_k05_low` object are printed for you below. As you can see, `cv_info_k05_low` contains 3 columns, `train`, `test`, and `.id`. Although the object appears to be a data frame or tibble, the contents are not like most data frames. The `train` and `test` columns are actually lists which contain complex data objects. These complex objects are pointer-like in that they store how to access the training and test data sets from the original data set. In this way, the resampled object can be more memory efficient than just storing the actual data splits themselves. The `.id` column is just an ID, and so each row in `cv_info_k05_low` is a particular fold.  
+
+```{r, show_5fold_object}
+cv_info_k05_low
+```
+
+There are several ways to access the data sets directly. You can convert the resampled objects into integers, which provide the row indices associated with the train or test splits for each fold. To access the indices you need to use the `[[]]` format since you are selecting an element in a list. For example, to access the row indices for all rows selected in the first fold's training set:  
+
+```{r, show_fold_train_select}
+as.integer(cv_info_k05_low$train[[1]])
+```
+
+Likewise to access the row indices for the third fold's test set:  
+
+```{r, show_fold_test_select}
+as.integer(cv_info_k05_low$test[[3]])
+```
+
+By storing pointers, the resample objects are rather memory efficient. We can make use of functional programming techniques to quickly and efficiently train and test models across all folds. In this assignment, though, you will turn the resampled object into separate data sets. Although not memory efficient, doing so allows you to work with each fold directly.  
+
+#### PROBLEM
+
+**Convert each training and test split within each fold to a separate data set. To do so, use the `as.data.frame()` function instead of the `as.integer()` function. The object names in the code chunks below denote training or test and the particular fold to assign. You only have to work with the resampled object based on the low noise data set.**  
+
+#### SOLUTION
+
+The fold training sets should be specified in the code chunk below.  
+
+```{r, solution_04e_a, eval=TRUE}
+low_noise_train_fold_01 <- as.data.frame(cv_info_k05_low$train[[1]])
+low_noise_train_fold_02 <- as.data.frame(cv_info_k05_low$train[[2]])
+low_noise_train_fold_03 <- as.data.frame(cv_info_k05_low$train[[3]])
+low_noise_train_fold_04 <- as.data.frame(cv_info_k05_low$train[[4]])
+low_noise_train_fold_05 <- as.data.frame(cv_info_k05_low$train[[5]])
+```
+
+The fold test sets should be specified in the code chunk below.  
+
+```{r, solution_04_e_b, eval=TRUE}
+low_noise_test_fold_01 <- as.data.frame(cv_info_k05_low$test[[1]])
+low_noise_test_fold_02 <- as.data.frame(cv_info_k05_low$test[[2]])
+low_noise_test_fold_03 <- as.data.frame(cv_info_k05_low$test[[3]])
+low_noise_test_fold_04 <- as.data.frame(cv_info_k05_low$test[[4]])
+low_noise_test_fold_05 <- as.data.frame(cv_info_k05_low$test[[5]])
+```
+
+### 4f)
+
+With the training and test splits available, now it's time to train the models on each training fold split. You can ignore the linear relationship model for the remainder of the assignment, and focus just on the quadratic relationship and 8th order polynomial.  
+
+#### PROBLEM
+
+**Fit or train the quadratic relationship and 8th order polynomial using each fold's training split. Use the formula interface the define the relationship in each `lm()` call.**  
+
+#### SOLUTION
+
+The quadratic relationship fits should be specified below.  
+
+```{r, solution_04f_a, eval=TRUE}
+mod_low_quad_fold_01 <- lm(y ~ x + I(x^2), data = low_noise_train_fold_01)
+
+mod_low_quad_fold_02 <- lm(y ~ x + I(x^2), data = low_noise_train_fold_02)
+
+mod_low_quad_fold_03 <- lm(y ~ x + I(x^2), data = low_noise_train_fold_03)
+
+mod_low_quad_fold_04 <- lm(y ~ x + I(x^2), data = low_noise_train_fold_04)
+
+mod_low_quad_fold_05 <- lm(y ~ x + I(x^2), data = low_noise_train_fold_05)
+```
+
+The 8th order polynomial fits should be specified below.  
+
+```{r, solution_04f_b, eval=TRUE}
+mod_low_8th_fold_01 <- lm(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + 
+                            I(x^6) + I(x^7) + I(x^8), data = low_noise_train_fold_01)
+
+mod_low_8th_fold_02 <- lm(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + 
+                            I(x^6) + I(x^7) + I(x^8), data = low_noise_train_fold_02)
+
+mod_low_8th_fold_03 <- lm(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + 
+                            I(x^6) + I(x^7) + I(x^8), data = low_noise_train_fold_03)
+
+mod_low_8th_fold_04 <- lm(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + 
+                            I(x^6) + I(x^7) + I(x^8), data = low_noise_train_fold_04)
+
+mod_low_8th_fold_05 <- lm(y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5) + 
+                            I(x^6) + I(x^7) + I(x^8), data = low_noise_train_fold_05)
+```
+
+### 4g)
+
+Let's compare the RMSE of the quadratic relationship to the 8th order polynomial, within each training fold. In this way, we can check that even after splitting the data, comparing models based on their training data still favors more complex models.  
+
+#### PROBLEM
+
+**Calculate the RMSE for the quadratic relationship, using each fold's model fit, relative to the training splits. Thus, you should calculate 5 quantities, and store the 5 quantities in a vector named `cv_low_quad_fold_train_rmse`. Perform the analogous operation for the 8th order polynomial fits, and store in the vector named `cv_low_8th_fold_train_rmse`.**  
+
+**Calculate the average RMSE across the 5-folds for both relationships. Which relationship has the lowest average RMSE?**  
+
+#### SOLUTION
+
+```{r}
+#Calculate the RMSE of each of the folds from the 5-fold for the 2nd order polynomial folds of the low-noise training data set that has already been partitioned into folds.
+
+mod_low_quad_train_fold_01_rmse <- modelr::rmse(mod_low_quad_fold_01, low_noise_train_fold_01)
+
+mod_low_quad_train_fold_02_rmse <- modelr::rmse(mod_low_quad_fold_02, low_noise_train_fold_02)
+
+mod_low_quad_train_fold_03_rmse <- modelr::rmse(mod_low_quad_fold_03, low_noise_train_fold_03)
+
+mod_low_quad_train_fold_04_rmse <- modelr::rmse(mod_low_quad_fold_04, low_noise_train_fold_04)
+
+mod_low_quad_train_fold_05_rmse <- modelr::rmse(mod_low_quad_fold_05, low_noise_train_fold_05)
+
+#Send each fold into a vector of RMSEs from the 2nd order polynomial folds...
+
+cv_low_quad_fold_train_rmse <- c(mod_low_quad_train_fold_01_rmse, mod_low_quad_train_fold_02_rmse, 
+                                 mod_low_quad_train_fold_03_rmse, mod_low_quad_train_fold_04_rmse, 
+                                 mod_low_quad_train_fold_05_rmse)
+
+#Calculate the mean of the vector.
+
+mean(cv_low_quad_fold_train_rmse)
+
+```
+
+```{r}
+#Calculate the RMSE of each of the folds from the 5-fold for the 8th order polynomial folds of the low-noise training data set that has already been partitioned into folds.
+
+mod_low_8th_train_fold_01_rmse <- modelr::rmse(mod_low_8th_fold_01, low_noise_train_fold_01)
+
+mod_low_8th_train_fold_02_rmse <- modelr::rmse(mod_low_8th_fold_02, low_noise_train_fold_02)
+
+mod_low_8th_train_fold_03_rmse <- modelr::rmse(mod_low_8th_fold_03, low_noise_train_fold_03)
+
+mod_low_8th_train_fold_04_rmse <- modelr::rmse(mod_low_8th_fold_04, low_noise_train_fold_04)
+
+mod_low_8th_train_fold_05_rmse <- modelr::rmse(mod_low_8th_fold_05, low_noise_train_fold_05)
+
+#Send each fold into a vector of RMSEs from the 8th order polynomial folds...
+
+cv_low_8th_fold_train_rmse <- c(mod_low_8th_train_fold_01_rmse, mod_low_8th_train_fold_02_rmse, 
+                                mod_low_8th_train_fold_03_rmse, mod_low_8th_train_fold_04_rmse, 
+                                mod_low_8th_train_fold_05_rmse)
+
+#Calculate the mean of the vector.
+
+mean(cv_low_8th_fold_train_rmse)
+```
+
+
+### DISCUSSION: 
+The quadratic relationship has the lowest average RMSE among the 5-folds.
+
+### 4h)
+
+Now, it's time to compare the quadratic and 8th order polynomial performance in the 5 test splits. Repeat the steps you performed in Problem 4g), but this time with the test splits, instead of the training splits.  
+
+#### PROBLEM
+
+**Calculate the test split RMSEs for each fold for the quadratic and 8th order polynomial. Assign the results to `cv_low_quad_fold_test_rmse` and `cv_low_8th_fold_test_rmse`, for the quadratic and 8th order polynomial, respectively. Which relationship has the lowest average cross-validation RMSE on the test splits?**  
+
+#### SOLUTION
+
+```{r}
+#Calculate the RMSE of each of the folds from the 5-fold for the 2nd order polynomial folds of the low-noise test data set that has already been partitioned into folds.
+
+mod_low_quad_test_fold_01_rmse <- modelr::rmse(mod_low_quad_fold_01, low_noise_test_fold_01)
+
+mod_low_quad_test_fold_02_rmse <- modelr::rmse(mod_low_quad_fold_02, low_noise_test_fold_02)
+
+mod_low_quad_test_fold_03_rmse <- modelr::rmse(mod_low_quad_fold_03, low_noise_test_fold_03)
+
+mod_low_quad_test_fold_04_rmse <- modelr::rmse(mod_low_quad_fold_04, low_noise_test_fold_04)
+
+mod_low_quad_test_fold_05_rmse <- modelr::rmse(mod_low_quad_fold_05, low_noise_test_fold_05)
+
+#Send each fold into a vector of RMSEs from the 2nd order polynomial folds...
+
+cv_low_quad_fold_test_rmse <- c(mod_low_quad_test_fold_01_rmse, mod_low_quad_test_fold_02_rmse, 
+                                mod_low_quad_test_fold_03_rmse, mod_low_quad_test_fold_04_rmse, 
+                                mod_low_quad_test_fold_05_rmse)
+
+#Calculate the mean of the vector.
+
+mean(cv_low_quad_fold_test_rmse)
+
+```
+
+
+```{r}
+
+#Calculate the RMSE of each of the folds from the 5-fold for the 8th order polynomial folds of the low-noise test data set that has already been partitioned into folds.
+
+mod_low_8th_test_fold_01_rmse <- modelr::rmse(mod_low_8th_fold_01, low_noise_test_fold_01)
+
+mod_low_8th_test_fold_02_rmse <- modelr::rmse(mod_low_8th_fold_02, low_noise_test_fold_02)
+
+mod_low_8th_test_fold_03_rmse <- modelr::rmse(mod_low_8th_fold_03, low_noise_test_fold_03)
+
+mod_low_8th_test_fold_04_rmse <- modelr::rmse(mod_low_8th_fold_04, low_noise_test_fold_04)
+
+mod_low_8th_test_fold_05_rmse <- modelr::rmse(mod_low_8th_fold_05, low_noise_test_fold_05)
+
+#Send each fold into a vector of RMSEs from the 2nd order polynomial folds...
+
+cv_low_8th_fold_test_rmse <- c(mod_low_8th_test_fold_01_rmse, mod_low_8th_test_fold_02_rmse, 
+                               mod_low_8th_test_fold_03_rmse, mod_low_8th_test_fold_04_rmse, 
+                               mod_low_8th_test_fold_05_rmse)
+
+#Calculate the mean of the vector.
+
+mean(cv_low_8th_fold_test_rmse)
+```
+
+
+### DISCUSSION:
+The quadratic relationship has the lowest average cross-validation RMSE on test splits.
+

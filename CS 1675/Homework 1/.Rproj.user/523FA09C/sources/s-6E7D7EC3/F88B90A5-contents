@@ -1,0 +1,173 @@
+---
+title: "Week 2 Recitation: Programming Intro"
+author: "Gordon Lu"
+date: "1/13/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Big section
+
+## Sub section
+
+### Sub sub section
+
+#### 4th section
+
+## Load Libraries 
+
+```{r, load_packages, warning=FALSE, message=FALSE}
+# No need to import the 
+library(dplyr)
+library(ggplot2)
+
+```
+
+## Practice Dataset
+
+Work with the `mtcars` data set. A new sentence.  
+
+Two spaces make a paragraph!  
+
+Create code chunk with CTRL + ALT + I
+```{r, practice_mtcars}
+#mt_cars is available in base R
+```
+
+Use the glimpse function to "look" at a data set.
+
+```{r}
+glimpse(mtcars)
+
+```
+
+CTRL + SHIFT + M to create a pipe
+
+```{r}
+##started with mtcars and applied the same action, pretty stupid action ;)
+mtcars %>% glimpse()
+##display function 
+
+```
+
+
+Check data types:
+
+```{r}
+class(mtcars$mpg)
+```
+
+```{r}
+class(mtcars)
+##dataframes intended for stuff that looks like an Excel Sheet (Rows and Columns)
+```
+
+
+```{r}
+##Moden version of dataframes is a tibble, convert tibble to df...
+mtcars %>% tbl_df() %>% class()
+```
+
+
+```{r}
+##want to mutate the dataset, function is now being applied to mt_cars, create a new column
+mtcars %>% tbl_df() %>% mutate(car_name = rownames(mtcars))
+##Because of the conversion to tibble, mutate places the column at the end
+mtcars %>% tbl_df() %>% 
+  tibble::rownames_to_column() %>% 
+  mutate(car_name = rownames(mtcars))
+#:: allows to import all functions from a package, no need to import!
+mtcars %>% tbl_df() %>% 
+  tibble::rownames_to_column("my_rowname") %>% 
+  tibble::rowid_to_column() %>% 
+  mutate(car_name = rownames(mtcars))
+##row_name is a character string, row_id is an integer!
+```
+
+```{r}
+mtcars %>% tbl_df() %>% 
+  tibble::rownames_to_column("my_rowname") %>% 
+  tibble::rowid_to_column() %>% 
+  mutate(car_name = rownames(mtcars), mpg_2 = 2 * mpg)
+##add a new column, which is 2*mpg
+```
+
+```{r}
+## arrow is read as "gets"
+##mtcars_b "gets" the end result of all these actions!
+mtcars_b <- mtcars %>% tbl_df() %>% 
+  tibble::rownames_to_column("my_rowname") %>% 
+  tibble::rowid_to_column() %>% 
+  mutate(car_name = rownames(mtcars))
+##mtcars is unchanged, these actions do not reassign any of the changes, have to assign those changes in order for
+##those changes to be reflected in memory
+```
+
+## Data Manipulation
+
+### Select columns
+Want to subset the data set, want to pull certain columns
+
+Use the `select()` verb to subset columns
+
+```{r}
+mtcars_b %>% 
+  dplyr::select(mpg)
+#Only get the select from dplyr, if has same function names, by default just use the library that was most recently loaded
+#Non-standard evaluation
+```
+
+```{r}
+#Select multiple columns
+mtcars_b %>% 
+  select(mpg, cyl, my_rowname)
+```
+
+```{r}
+mtcars_b %>% 
+  select(starts_with("10"))
+```
+
+```{r}
+mtcars_b %>% 
+  select(starts_with("a"))
+```
+
+### Filtering
+```{r}
+##Filters out everything that does not fulfull the condition
+mtcars_b %>% 
+  filter(mpg > 20 & cyl == 4)
+```
+
+## Grouping
+```{r}
+mtcars %>% 
+  distinct(cyl)
+# How many cars have distinct cylinders.
+
+```
+```{r}
+mtcars %>% 
+  count(cyl)
+```
+
+```{r}
+mtcars_b %>% 
+  group_by(cyl) %>%
+  summarize(num_rows = n(),
+            avg_mpg = mean(mpg))
+##Get the number of rows associated with each unique cylinder, then combines into a new data set.
+#Get the avg mpg associated with each grouping of cylinders, then send it into a new data set.
+##group by creates an attribute, grouping structure behind the scenes
+##best way to understand is by the summarize() function
+```
+
+
+
+
+
+

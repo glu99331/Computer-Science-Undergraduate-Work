@@ -1,0 +1,6 @@
+"0","mtcars_b <- mtcars %>% "
+"0","  tbl_df() %>% "
+"0","  tibble::rownames_to_column(""my_rowname"") %>% "
+"0","  tibble::rowid_to_column() %>% "
+"0","  mutate(car_name = rownames(mtcars),"
+"0","         mpg_2 = 2 * mpg)"

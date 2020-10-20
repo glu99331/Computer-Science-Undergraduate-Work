@@ -1,0 +1,5 @@
+"0","mtcars_b %>% "
+"0","  group_by(cyl) %>% "
+"0","  summarise(num_rows = n(),"
+"0","            avg_mpg = mean(mpg),"
+"0","            sd_mpg = sd(mpg))"

@@ -1,0 +1,4 @@
+"0","my_iris %>% "
+"0","  count(sepal_length_bin) %>% "
+"0","  ggplot(mapping = aes(x = sepal_length_bin, y = n)) +"
+"0","  geom_bar(stat = ""identity"")"
