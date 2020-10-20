@@ -1,4 +1,4 @@
-# Computer Science Undergraduate Coursework for Gordon Lu
+# Computer Science Undergraduate Coursework
 
 ## This repository contains all of the coursework I worked on as a Computer Science Undergraduate Student at the University of Pittsburgh.
 
