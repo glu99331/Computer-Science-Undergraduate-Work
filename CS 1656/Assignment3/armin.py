@@ -368,6 +368,6 @@ class Armin():
    
 if __name__ == "__main__":
     armin = Armin()
-    #armin.apriori('input.csv', 'output.sup=0.5,conf=0.7.csv', 0.5, 0.7)
+    armin.apriori('input.csv', 'output.sup=0.5,conf=0.7.csv', 0.5, 0.7)
     armin.apriori('input.csv', 'output.sup=0.5,conf=0.8.csv', 0.5, 0.8)
-    #armin.apriori('input.csv', 'output.sup=0.6,conf=0.8.csv', 0.6, 0.8)
+    armin.apriori('input.csv', 'output.sup=0.6,conf=0.8.csv', 0.6, 0.8)
