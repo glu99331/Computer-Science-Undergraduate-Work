@@ -1,5 +1,0 @@
-test of reading and writing to a file in Python. 
-Written to file on Friday, 9/4/20
-Written to file on Friday, 9/4/20
-Written to file on Friday, 9/4/20
-Written to file on Friday, 9/4/20
