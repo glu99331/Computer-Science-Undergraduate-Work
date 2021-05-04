@@ -1,0 +1,295 @@
+\documentstyle[11pt]{article}
+\pagestyle{empty} \setlength{\textwidth}{6.5in}
+\setlength{\topmargin}{-0.7in} \setlength{\textheight}{8.7in}
+\setlength{\oddsidemargin}{.0in}
+\setlength{\evensidemargin}{.0in} \setlength{\voffset}{10pt}
+\begin{document}
+
+\begin{center}
+{\large\sc CS 1555 / 2055 --  Database Management Systems (Fall 2020)} \\
+{\sc Dept.  of Computer Science,  University of Pittsburgh} \\
+\vspace*{0.25cm}
+{\Large Assignment \#6: Database Design - Normalization (Solution)} \\
+\end{center}
+Release: Nov. 3, 2020 \hfill
+Due: 8:00 PM, Nov. 12, 2020.\\
+\-\hrulefill\- \newline
+
+\newcommand{\eat}[1]{}
+\noindent
+\begin{enumerate}
+\item \mbox{[30 points]}
+    Consider the relation R(A,B,C,D,E,F). Use {\bf synthesis method} to construct a set of 3NF relations from the following functional dependencies. Indicate the primary key for each relation in the result.
+
+    \hspace{1 in} AB $\rightarrow$ E
+
+    \hspace{1 in} B $\rightarrow$ ED
+
+    \hspace{1 in} E $\rightarrow$ D
+
+	\hspace{1 in} DF $\rightarrow$ A
+
+ 	\hspace{1 in} C $\rightarrow$ F
+
+	\hspace{1 in} DC $\rightarrow$ A
+
+    \textbf{Solution:}
+    \begin{enumerate}
+        \item Find the canonical cover of F:
+            \begin{enumerate}
+                \item Transform all FDs to canonical form (i.e., one attributes on the right):
+                
+                \hspace{0.5 in} AB $\rightarrow$ E
+                
+                \hspace{0.5 in} B $\rightarrow$ E
+
+                \hspace{0.5 in} B $\rightarrow$ D
+                
+			    \hspace{0.5 in} E $\rightarrow$ D			
+
+				\hspace{0.5 in} DF $\rightarrow$ A			
+
+			 	\hspace{0.5 in} C $\rightarrow$ F			
+
+				\hspace{0.5 in} DC $\rightarrow$ A
+
+                \item Drop extraneous attributes:           
+                A in AB $\rightarrow$ E is extraneous, since we have B $\rightarrow$ E. 
+                
+                %Start of the Proof%
+                The complete proof is as follows:
+               
+				\hspace{0.2 in} Considering the minimality of LHS of AB  $\rightarrow$ E
+				
+				\hspace{0.2 in} First we need to compute: A+ using minimal cover
+				
+				\hspace{0.2 in} A+ = A (Initialization)
+				
+				\hspace{0.2 in} = A
+				
+				\hspace{0.2 in} Done.
+				
+				\hspace{0.2 in} $=>$ E is not subset of A+. So attr B is necessary.		
+						
+				\hspace{0.2 in} Then, we need to compute: B+ using minimal cover
+				
+				\hspace{0.2 in} B+ = B (Initialization)
+				
+				\hspace{0.2 in} = BD (B  $\rightarrow$ D)
+				
+				\hspace{0.2 in} = BDE (B  $\rightarrow$ E)
+				
+				\hspace{0.2 in} ...
+				
+				\hspace{0.2 in} Done.
+				
+				\hspace{0.2 in} $=>$ E is a subset of (AB - A)+. So A is NOT necessary\\
+                %End of the Proof%
+
+                The set of FDs becomes:
+                
+                \hspace{0.5 in} B $\rightarrow$ E
+
+                \hspace{0.5 in} B $\rightarrow$ D
+                
+			    \hspace{0.5 in} E $\rightarrow$ D			
+
+				\hspace{0.5 in} DF $\rightarrow$ A			
+
+			 	\hspace{0.5 in} C $\rightarrow$ F			
+
+				\hspace{0.5 in} DC $\rightarrow$ A
+				
+				\item Drop (transitive) redundant FDs:
+				
+				B $\rightarrow$ E and E $\rightarrow$ D implies B $\rightarrow$ D, so we drop B $\rightarrow$ D.
+				
+				C $\rightarrow$ F implies CD $\rightarrow$ FD. We also have DF $\rightarrow$ A, so we drop DC $\rightarrow$ A.
+				
+				The set of FDs becomes:
+				
+                \hspace{0.5 in} B $\rightarrow$ E
+
+                \hspace{0.5 in} E $\rightarrow$ D			
+
+				\hspace{0.5 in} DF $\rightarrow$ A			
+
+			 	\hspace{0.5 in} C $\rightarrow$ F			
+				
+				which is the canonical cover of F.
+            \end{enumerate}
+        \item Find the primary key of R:
+            Observations:
+                \begin{enumerate}
+                    \item B and C do not appear on the right hand side of any FD, so they have to appear in all keys of R.
+                    \item BC+ : BC $\rightarrow$ BCE (since B $\rightarrow$ E ) $\rightarrow$ BCED (since E $\rightarrow$ D) $\rightarrow$  BCEDF (since C $\rightarrow$ F) $\rightarrow$ BCEDFA (since DF $\rightarrow$ A). So BC is a key of R.
+                    
+                    In this case, we do not need to consider any other combination, because any other combination containing BC (e.g., BCD) is a super key and not minimal.
+                \end{enumerate}
+        \item We do not need to group the FDs in the canonical cover because all the determinants on the left side are unique.
+        \item Construct a relation for each group:
+        
+                \hspace{0.75 in} R1 (\underline{B}, E)
+                
+                \hspace{0.75 in} R2 (\underline{E}, D)
+                
+                \hspace{0.75 in} R3 (\underline{D, F}, A)
+                
+                \hspace{0.75 in} R4 (\underline{C}, F)
+        \item If none of the relations contain the key for the original relation, add a relation with the key:
+        
+            \hspace{0.75 in} R5 (\underline{B, C})
+            
+            R1, R2, R3, R4, and R5 are in 3NF and in BCNF.
+    \end{enumerate}
+
+\item \mbox{[30 points]}
+    Consider the relation R(A,B,C,D) and the following set of functional dependencies F. Apply the {\bf decomposition method} on R to end up with BCNF relations and dependency preserving. Indicate the primary key for each relation in the result.
+
+    \hspace{1 in}A $\rightarrow$ B 
+
+    \hspace{1 in}B $\rightarrow$ CD 
+   
+    \hspace{1 in}A $\rightarrow$ D
+   
+    \hspace{1 in}B $\rightarrow$ C
+
+    \hspace{1 in}AB $\rightarrow$ CD
+    
+	\textbf{Solution:}
+	\begin{enumerate}
+        \item Find the canonical cover of F:
+        
+	    \hspace{0.75 in}A $\rightarrow$ B 
+	
+	    \hspace{0.75 in}B $\rightarrow$ D 
+	   
+	    \hspace{0.75 in}B $\rightarrow$ C
+	    
+	    \item Apply the decomposition method on R to end up with BCNF relations:
+	        \begin{enumerate}
+	            \item Using A $\rightarrow$ B to decompose R, we can get:
+	            
+	                \hspace{0.5 in} R1$^\prime$ (\underline{A}, C, D) in BCNF
+
+	                \hspace{0.5 in} R2$^\prime$ (\underline{A}, B) in BCNF
+	                
+	            Note that this decomposition does not preserve dependencies B $\rightarrow$ D and B $\rightarrow$ C, so we choose another dependency and try again from the start.
+	            
+	            \item Using B $\rightarrow$ D to decompose R, we can get:
+	            
+	                \hspace{0.5 in} R1 (\underline{A}, B, C) in 2NF
+	                
+                    \hspace{0.5 in} R2 (\underline{B}, D) in BCNF
+
+	            \item Using B $\rightarrow$ C to decompose R1, we can get:
+
+	                \hspace{0.5 in} R11 (\underline{A}, B) in BCNF
+	                
+	                \hspace{0.5 in} R12 (\underline{B}, C) in BCNF
+	            
+	            A correct decomposition would be R2, R11 and R12. R2, R11 and R12 are in BCNF and dependency preserving. An efficient one that eliminates an unnecessary join is :
+	                        
+	                \hspace{0.5 in} T1 (\underline{A}, B)
+	                
+	                \hspace{0.5 in} T2 (\underline{B}, C, D)
+
+				where we group R2 and R12 since they share the same primary key. T1 and T2 are in BCNF and dependency preserving.
+	        \end{enumerate}
+	    
+    \end{enumerate}
+\item \mbox{[40 points]}
+     Using the table method, check if the following decomposition is good, bad or ugly. Show all steps.\\
+     
+R1: (\underline{ProductID}, Length, Width, Height, Weight, \underline{OrderID}, OrderDate, CustomerID, TotalPrice)\\
+R2: (\underline{CustomerID}, Address, City, State, ZipCode, PhoneNumber)\\
+R3: (\underline{ProductID}, \underline{OrderID}, ProductQuantity)\\
+
+\vspace*{-0.5em}
+
+Assume the functional dependency set to be:\\
+FD1: ProductID  $\rightarrow$ Length, Width, Height, Weight\\
+FD2: OrderID $\rightarrow$ OrderDate, CustomerID, TotalPrice\\
+FD3: CustomerID $\rightarrow$ Address, City, State, ZipCode, PhoneNumber\\
+FD4: ProductID, OrderID $\rightarrow$ ProductQuantity\\
+
+\textbf{Hint:} bad decomposition is a lossy one, while ugly decomposition is lossless but does not preserve some dependencies.\\
+
+\textbf{Solution:} \\
+
+Let the attributes be sorted in the following order: \\
+(1) ProductID, (2) Length, (3) Width, (4) Height, (5) Weight, (6) OrderID, (7) OrderDate, (8) CustomerID, (9) TotalPrice, (10) Address, (11) City, (12) State, (13) ZipCode, (14) PhoneNumber, (15) ProductQuantity\\
+
+Initially the table looks like the following. Note that the table uses simplified marks. ``k'' means known cell, and empty cell means ``U''.
+
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline 
+& 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 \\ 
+\hline 
+R1 & k & k & k & k & k & k & k & k & k &  &  &  &  &  &  \\ 
+\hline 
+R2 &  &  &  &  &  &  &  & k &  & k & k & k & k & k &  \\ 
+\hline 
+R3 & k &  &  &  &  & k &  &  &  &  &  &  &  &  & k \\ 
+\hline 
+\end{tabular} \\
+
+Using FD1, we can add more ``k'' marks in the table. New marks are in italic uppercase.
+
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline 
+& 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 \\ 
+\hline 
+R1 & k & k & k & k & k & k & k & k & k &  &  &  &  &  &  \\ 
+\hline 
+R2 &  &  &  &  &  &  &  & k &  & k & k & k & k & k &  \\ 
+\hline 
+R3 & k & \textit{K} & \textit{K} & \textit{K} & \textit{K} & k &  &  &  &  &  &  &  &  & k \\ 
+\hline 
+\end{tabular} \\
+
+Then we use FD2 to update the table. New marks are in italic uppercase.
+
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline 
+& 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 \\ 
+\hline 
+R1 & k & k & k & k & k & k & k & k & k &  &  &  &  &  &  \\ 
+\hline 
+R2 &  &  &  &  &  &  &  & k &  & k & k & k & k & k &  \\ 
+\hline 
+R3 & k & k & k & k & k & k & \textit{K} & \textit{K} & \textit{K} &  &  &  &  &  & k \\ 
+\hline 
+\end{tabular} \\
+
+Next, we use FD3 to update the table. New marks are in italic uppercase.
+
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline 
+& 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 \\ 
+\hline 
+R1 & k & k & k & k & k & k & k & k & k & \textit{K} & \textit{K} & \textit{K} & \textit{K} & \textit{K} &  \\ 
+\hline 
+R2 &  &  &  &  &  &  &  & k &  & k & k & k & k & k &  \\ 
+\hline 
+R3 & k & k & k & k & k & k & k & k & k & \textit{K} & \textit{K} & \textit{K} & \textit{K} & \textit{K} & k \\ 
+\hline 
+\end{tabular} \\
+
+Finally we use FD4 to update the table. New marks are in italic uppercase.
+
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline 
+& 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 \\ 
+\hline 
+R1 & k & k & k & k & k & k & k & k & k & k & k & k & k & k & \textit{K} \\ 
+\hline 
+R2 &  &  &  &  &  &  &  & k &  & k & k & k & k & k &  \\ 
+\hline 
+R3 & k & k & k & k & k & k & k & k & k & k & k & k & k & k & k \\ 
+\hline 
+\end{tabular} \\
+
+Now we have 2 rows filled with mark ``k'', so it is a lossless decomposition. Since it preserves all FDs, it is a good decomposition.
+\end{enumerate}
+\end{document}
