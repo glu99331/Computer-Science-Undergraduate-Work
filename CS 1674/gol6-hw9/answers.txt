@@ -1,0 +1,21 @@
+Part I: The performance in this scenario was low with less than 20% accuracy (although the loss did decrease from the 2nd through 6th iterations). The final accuracy is around 0.1250, a lot less than the 0.3-0.4 in hw7. This is because the training is built completely from scratch and from randomized digits 0 through 9. The images that must be classified do not have a robust training system to be classified on.
+
+Part II: The performance for this part was much better than the previous one. Although accuracy started out under 20%, it eventually increased to 46.09% by the last iteration. Additionally, the loss was a lot better. This network worked better because it utilized transfer learning with AlexNet which has been trained on over a million images. These images are not only greater in number, but fit into categories that are more likely to be helpful to the images I am classifying (objects rather than digits which are transformed). Thus, the performance increased using AlexNet.
+
+Part III: The accuracy in this section was even greater than Part II with 0.7825. The loss was fairly low(similar to Part II). This is likely due to the additional layers added to the training network.
+
+Part IV:
+The accuracies, in order, were as follows: 
+	0.1250
+	0.4609
+	0.7825
+The first part likely performed worse than the SVM classifier because of the training method and images used. In hw7, we trained using images from within the same dataset as the tested files while the network used in Part I is based off of randomly generated images of digits. So, the images in the scenes folder were more likely to match the training set and have a higher resulting accuracy during test time.
+The second part likely performed better than the first part because it used transfer learning with AlexNet. AlexNet has a much larger database of images, and they are of objects rather than digits (which probably have more relevant features that can be used for classifying scenes). Also, the network uses deep learning with many layers (16) for more robustness.
+The third part was likely more accurate than the second part because of the additional layers used. It used an additional:
+    17   'fc6'      Fully Connected               4096 fully connected layer
+    18   'relu6'    ReLU                          ReLU
+    19   'drop6'    Dropout                       50% dropout
+    20   'fc7'      Fully Connected               4096 fully connected layer
+    21   'relu7'    ReLU                          ReLU
+    22   'drop7'    Dropout                       50% dropout
+These additional could have dropped out noise/other content that could allow for misclassification.

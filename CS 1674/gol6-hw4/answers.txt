@@ -1,0 +1,39 @@
+For question 1, I ran extract_keypoints by getting the top 1 percentage of keypoints.
+1) For which of the three representations is the within-between ratio smallest?
+Among bag of words using SIFT descriptors using different values of k i.e. different number of cluster centers, concatenation of the texture representation of all pixels, and average over the texture representation of pixels,
+BOW with k = 5 having 0.0096.
+
+2) Does the answer to this question depend on the value of k that you use?
+Yes. When k = 2 the lowest ratio is actually texture representation.
+
+3) Does it depend on the number of keypoints you extract? (Try 500, 1000, 2000, 3000.)
+Yes, as the number of keypoints increases, the ratios for BOW change:
+Top 500 keypoints
+Ratio for BOW k=2: 0.750105
+Ratio for BOW k=5: 0.917510
+Ratio for BOW k=10: 1.089441
+Ratio for BOW k=50: 1.017099
+Ratio for BOW k=100: 0.993336
+Ratio for BOW k=200: 0.990432
+
+Top 1000 keypoints:
+Ratio for BOW k=2: 0.697263
+Ratio for BOW k=5: 0.440398
+Ratio for BOW k=10: 0.560432
+Ratio for BOW k=50: 0.777782
+Ratio for BOW k=100: 0.776091
+Ratio for BOW k=200: 0.798269
+
+Top 1500 keypoints:
+Ratio for BOW k=2: 0.658316
+Ratio for BOW k=5: 0.584312
+Ratio for BOW k=10: 0.562054
+Ratio for BOW k=50: 0.519506
+Ratio for BOW k=100: 0.603589
+Ratio for BOW k=200: 0.587642
+
+4) Which of the three types of descriptors that you used is the best one? How can you tell?
+The ratio for BOW k=5 and abover works the best. It consistently produces the smallest within-between representation, and thus is better at differentiating between images.
+
+5) Is this what you expected? Why or why not?
+Exactly what I had expected. From a geometric point-of-view, the BOW representation would be expected to work very well, as it is flexible.

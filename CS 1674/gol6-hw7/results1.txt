@@ -1,0 +1,9 @@
+The accuracies were:
+1) Pyramid representation - 0.5600
+2) Level 0 representation - 0.4150
+3) Level 1 representation - 0.5350
+
+The level 1 representation performed better than the level 0 representation because with strong features, single-level representation accuracy maintained strong.
+However, what should theoretically occur is accuracy declines after a certain point, and level 0 representation should have better accuracy. 
+This can be attributed to the fact that the specific descriptors chosen by level 0 mattered less than others that may be found.
+The combined pyramid representation had the most accuracy in test predictions because pyramids tend to perform the best as opposed to single-level representations (they have more robust training input).

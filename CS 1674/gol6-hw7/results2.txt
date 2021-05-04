@@ -1,0 +1,8 @@
+As the K values increase, KNN Test Accuracy starts at a high amount of acccuracy and then overtime drops slightly.
+Meanwhile KNN Train Accuracy,starts at a very low accuracy and increases steadily and levels off.
+Both SVM Test Accuracy and SVM Train Accuracy remain constant.
+
+Also, as K increases, the accuracy evens out for all methods. 
+
+As K increases, SVM train, KNN train, SVM test and KNN test, have the best accuracies, ranked from greatest to lowest.
+SVM train has the highest accuracy, as it maximizes the margin between samples, resulting in more accurate classifications.

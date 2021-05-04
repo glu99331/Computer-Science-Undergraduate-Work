@@ -26,4 +26,6 @@
 
 ### CS 1656: Introduction to Data Science
 
+### CS 1674: Introduction to Computer Vision
+
 ### CS 1675: Introduction to Machine Learning

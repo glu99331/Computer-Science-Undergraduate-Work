@@ -1,0 +1,7 @@
+Lu, Gordon (gol6) CS 1674 HW 1
+
+2) Elapsed time is 0.027676 seconds.
+3_ Elapsed time is 0.000972 seconds.
+12) Dimensions are: 750 x 1500 pixels x 3 channels
+14) The number of pixels that are 6 are: 12
+15) The darkest pixel is: 5, located at [604, 1290]

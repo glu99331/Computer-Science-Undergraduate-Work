@@ -1,0 +1,16 @@
+The hinge loss and cross entropy loss are as follows:
+h_loss =
+
+    1.3144    0.0288    6.9304    6.9834
+    0.4269    2.6964    0.8951    6.6308
+    6.4296    0.6867    3.9775    1.9734
+
+
+ce_loss =
+
+    0.9792    0.4496    3.0090    2.7701
+    0.6986    1.4628    0.8632    2.5973
+    2.3537    0.8717    1.6831    1.1818
+
+From the above output, for hinge loss, we see that the W2 matrix has the lowest hinge loss with 0.0288.
+As for cross-entropy loss, we also see that the W2 matrix has the lowest loss of 0.4496.
