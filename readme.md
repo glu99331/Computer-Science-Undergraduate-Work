@@ -29,3 +29,5 @@
 ### CS 1674: Introduction to Computer Vision
 
 ### CS 1675: Introduction to Machine Learning
+
+### CS 1678: Introduction to Deep Learning
