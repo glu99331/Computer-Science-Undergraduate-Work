@@ -24,6 +24,8 @@
 
 ### CS 1555: Database Management Systems
 
+### CS 1652: Data Communication and Computer Networks
+
 ### CS 1656: Introduction to Data Science
 
 ### CS 1674: Introduction to Computer Vision
